@@ -102,3 +102,11 @@ fun BottomNavigation() {
 
     }
 }
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun PreviewBottomNavigation() {
+    WeatherAppTheme {
+        BottomNavigation()
+    }
+}
