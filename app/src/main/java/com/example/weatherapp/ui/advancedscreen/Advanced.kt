@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -45,31 +48,21 @@ import androidx.compose.ui.unit.sp
 import coil.annotation.ExperimentalCoilApi
 import com.example.weatherapp.ui.theme.Green40
 import coil.compose.rememberAsyncImagePainter
+import com.example.weatherapp.ui.theme.Grey80
 
-
-@Composable
-fun Advanced() {
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(Grey40)
-    ) {
-        TrendingNewsHeader()
-        CategoryList()
-        NewsList()
-    }
-}
-
+data class NewsItem(val imageUrl: String, val description: String, val source: String, val footer: String, )
 @Composable
 fun TrendingNewsHeader() {
     Row(
         modifier = Modifier
-            .padding(top = 24.dp, start = 16.dp, end = 16.dp),
+            .padding(top = 24.dp, start = 24.dp, end = 24.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = "Trending News",
             fontWeight = FontWeight.Bold,
-            fontSize = 25.sp,
+            fontSize = 30.sp,
+            color = Grey80,
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -98,7 +91,7 @@ fun CategoryList () {
     var selectedCategory by remember { mutableStateOf(categories[0]) }
 
     LazyRow( modifier = Modifier
-            .padding(top = 68.dp, start = 8.dp),
+        .padding(top = 16.dp, start = 16.dp, end = 16.dp),
     ) {
         items(categories) { category ->
             CategoryItem(
@@ -140,7 +133,7 @@ fun CategoryItem(
 }
 
 @Composable
-fun NewsList() {
+fun TrendingNewsList() {
     val newsItems = listOf(
         NewsItem("https://elacademy.edu.vn/wp-content/uploads/2024/05/Nhin-lai-nhan-sac-cua-Kim-Ji-Won-qua-tung.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
         NewsItem("https://newsmd2fr.keeng.vn/tiin/archive/imageslead/2024/05/16/3p5foojxpm06zsxnwyb61fhdvmk8mrbv.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
@@ -149,24 +142,30 @@ fun NewsList() {
 
     LazyRow(
         modifier = Modifier
-            .padding(top = 140.dp, start = 8.dp),
+            .padding(top = 16.dp, start = 16.dp, end = 16.dp),
     ) {
         items(newsItems) { newsItem ->
-            NewsItemBox(newsItem)
+            TrendingNewsItemBox(newsItem)
         }
     }
 }
 
 @OptIn(ExperimentalCoilApi::class)
 @Composable
-fun NewsItemBox(newsItem: NewsItem) {
+fun TrendingNewsItemBox(newsItem: NewsItem) {
     val painter = rememberAsyncImagePainter(newsItem.imageUrl)
     Column(
         modifier = Modifier
-            .padding(8.dp)
+            .fillMaxHeight()
+            .padding(start = 8.dp,end = 8.dp, top = 8.dp, bottom = 16.dp)
             .width(300.dp)
-            .height(380.dp)
-            .background(Color.White, shape = RoundedCornerShape(10.dp))
+            .shadow(
+                elevation = 7.dp,  // Adjust this value to increase/decrease shadow size
+                shape = RoundedCornerShape(10.dp),
+                ambientColor = Color.Black.copy(alpha = 0.4f),  // Lower alpha for less blur
+                spotColor = Color.Black.copy(alpha = 0.4f)     // Lower alpha for less blur
+            )
+            .background(Color.White)
             .clickable { /* Handle click */ }
 
     ) {
@@ -195,6 +194,126 @@ fun NewsItemBox(newsItem: NewsItem) {
             lineHeight = 30.sp,
         )
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+            text = newsItem.source,
+            fontSize = 25.sp,
+            color = Green40,
+            fontWeight = FontWeight.W600,
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            text = newsItem.footer,
+            fontSize = 14.sp,
+            color = Color.Gray
+        )
+    }
+}
+
+@Composable
+fun WorldNewsHeader() {
+    Row(
+        modifier = Modifier
+            .padding(top = 24.dp, start = 24.dp, end = 24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Global Stories",
+            fontWeight = FontWeight.Bold,
+            fontSize = 30.sp,
+            color = Grey80,
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Text(
+            text = "View All",
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            color = Green40,
+        )
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Icon(
+            imageVector = Icons.Default.DoubleArrow,
+            contentDescription = "View All",
+            tint = Green40,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
+@Composable
+fun WorldNewsList() {
+    val newsItems = listOf(
+        NewsItem("https://elacademy.edu.vn/wp-content/uploads/2024/05/Nhin-lai-nhan-sac-cua-Kim-Ji-Won-qua-tung.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
+        NewsItem("https://newsmd2fr.keeng.vn/tiin/archive/imageslead/2024/05/16/3p5foojxpm06zsxnwyb61fhdvmk8mrbv.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
+        NewsItem("https://newsmd2fr.keeng.vn/tiin/archive/imageslead/2024/05/16/3p5foojxpm06zsxnwyb61fhdvmk8mrbv.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 78.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        newsItems.forEach { newsItem ->
+            WorldNewsItemBox(newsItem)
+        }
+    }
+}
+
+@OptIn(ExperimentalCoilApi::class)
+@Composable
+fun WorldNewsItemBox(newsItem: NewsItem) {
+    val painter = rememberAsyncImagePainter(newsItem.imageUrl)
+    Row(
+        modifier = Modifier
+            .padding(top = 8.dp, bottom = 24.dp, start = 24.dp, end = 24.dp)
+            .fillMaxWidth()
+            .height(200.dp)
+            .shadow(
+                elevation = 7.dp,  // Adjust this value to increase/decrease shadow size
+                shape = RoundedCornerShape(10.dp),
+                ambientColor = Color.Black.copy(alpha = 0.4f),  // Lower alpha for less blur
+                spotColor = Color.Black.copy(alpha = 0.4f)     // Lower alpha for less blur
+            )
+            .background(Color.White)
+            .clickable { /* Handle click */ },
+    verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(20.dp)
+                .height(160.dp)
+                .width(180.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+        ) {
+            Image(
+                painter = painter,
+                contentDescription = newsItem.description,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            modifier = Modifier.padding(end = 30.dp),
+            text = newsItem.description,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            lineHeight = 30.sp,
+        )
+
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
@@ -216,12 +335,39 @@ fun NewsItemBox(newsItem: NewsItem) {
     }
 }
 
-data class NewsItem(val imageUrl: String, val description: String, val source: String, val footer: String, )
-
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun PreviewAdvanced() {
     WeatherAppTheme {
         Advanced()
+    }
+}
+
+@Composable
+fun Advanced() {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item {
+            Box(
+                modifier = Modifier
+                    .background(Grey40)
+                    .fillMaxSize()
+            ) {
+                Column {
+                    TrendingNewsHeader()
+                    CategoryList()
+                    TrendingNewsList()
+                }
+            }
+        }
+        item {
+            Box(
+                modifier = Modifier
+                    .background(Grey40)
+                    .fillMaxSize()
+            ) {
+                WorldNewsHeader()
+                WorldNewsList()
+            }
+        }
     }
 }

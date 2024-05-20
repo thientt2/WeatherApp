@@ -14,6 +14,7 @@ val GreenCL = Color(0xFF3FDC85)
 val Green40 = Color(0xFF6B9B42)
 
 val Grey40 = Color(0xFFE9E9E9)
+val Grey80 = Color(0xFF444444)
 
 val NavyBlue = Color(0xFF08244F)
 val DeepBlue = Color(0xFF134CB5)
