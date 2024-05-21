@@ -61,8 +61,8 @@ fun BottomNavigation() {
     Scaffold(
         bottomBar = {
             BottomAppBar(
-                containerColor = GreenCL,
-                tonalElevation = 8.dp
+                containerColor = Color.Transparent,
+                tonalElevation = 8.dp,
             ) {
                 BottomNavigationItem(
                     icon = { Icon(Icons.Default.Cloud, contentDescription = null,
@@ -99,7 +99,6 @@ fun BottomNavigation() {
             composable(Screen.Home.screen){Home()}
             composable(Screen.Advanced.screen){ Advanced() }
         }
-
     }
 }
 

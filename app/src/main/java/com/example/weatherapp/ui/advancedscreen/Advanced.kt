@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import com.example.weatherapp.ui.theme.WeatherAppTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -164,6 +166,7 @@ fun TrendingNewsItemBox(newsItem: NewsItem) {
             .fillMaxHeight()
             .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 16.dp)
             .width(300.dp)
+            .heightIn(max = 350.dp, min = 350.dp)
             .shadow(
                 elevation = 7.dp,  // Adjust this value to increase/decrease shadow size
                 shape = RoundedCornerShape(10.dp),
@@ -197,6 +200,8 @@ fun TrendingNewsItemBox(newsItem: NewsItem) {
             fontSize = 20.sp,
             style = TextStyle(textAlign = TextAlign.Justify),
             lineHeight = 30.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -318,6 +323,8 @@ fun WorldNewsItemBox(newsItem: NewsItem) {
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             lineHeight = 30.sp,
+            maxLines = 5,
+            overflow = TextOverflow.Ellipsis
         )
 
         Spacer(modifier = Modifier.height(8.dp))
