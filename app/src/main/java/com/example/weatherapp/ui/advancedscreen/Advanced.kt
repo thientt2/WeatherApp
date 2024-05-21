@@ -1,5 +1,8 @@
 package com.example.weatherapp.ui.advancedscreen
 
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.material.icons.filled.DoubleArrow
 import com.example.weatherapp.ui.theme.Grey40
@@ -22,12 +25,16 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +46,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,8 +58,10 @@ import coil.annotation.ExperimentalCoilApi
 import com.example.weatherapp.ui.theme.Green40
 import coil.compose.rememberAsyncImagePainter
 import com.example.weatherapp.ui.theme.Grey80
+import com.example.weatherapp.viewmodal.AdvancedViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.weatherapp.modal.NewsItem
 
-data class NewsItem(val imageUrl: String, val description: String, val source: String, val footer: String, )
 @Composable
 fun TrendingNewsHeader() {
     Row(
@@ -86,9 +97,8 @@ fun TrendingNewsHeader() {
 }
 
 @Composable
-fun CategoryList () {
-    val categories = listOf("All", "Sports", "Politics", "Technology", "Health", "Business", "Science", "Entertainment", "Environment", "Food")
-    var selectedCategory by remember { mutableStateOf(categories[0]) }
+fun CategoryList (selectedCategory: String, onCategorySelected: (String) -> Unit) {
+    val categories = listOf("top", "sports", "politics", "technology", "health", "business", "science", "entertainment", "environment", "food")
 
     LazyRow( modifier = Modifier
         .padding(top = 16.dp, start = 16.dp, end = 16.dp),
@@ -97,7 +107,7 @@ fun CategoryList () {
             CategoryItem(
                 category = category,
                 isSelected = category == selectedCategory,
-                onClick = { selectedCategory = category }
+                onClick = onCategorySelected
             )
         }
     }
@@ -107,7 +117,7 @@ fun CategoryList () {
 fun CategoryItem(
     category: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: (String) -> Unit
 ) {
     val backgroundColor = if (isSelected) Green40 else Grey40
     val color = if (isSelected) Color.White else Color.Black
@@ -117,12 +127,12 @@ fun CategoryItem(
         Modifier
     }
     BasicText(
-        text = category,
+        text = category.replaceFirstChar { if(it.isLowerCase()) it.titlecase() else it.toString() },
         modifier = Modifier
             .padding(start = 8.dp, end = 2.dp, top = 8.dp, bottom = 8.dp)
             .then(borderModifier)
             .background(color = backgroundColor, shape = RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
+            .clickable { onClick(category) }
             .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
         style = MaterialTheme.typography.body1.copy(
             fontSize = 18.sp,
@@ -133,13 +143,7 @@ fun CategoryItem(
 }
 
 @Composable
-fun TrendingNewsList() {
-    val newsItems = listOf(
-        NewsItem("https://elacademy.edu.vn/wp-content/uploads/2024/05/Nhin-lai-nhan-sac-cua-Kim-Ji-Won-qua-tung.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
-        NewsItem("https://newsmd2fr.keeng.vn/tiin/archive/imageslead/2024/05/16/3p5foojxpm06zsxnwyb61fhdvmk8mrbv.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
-        NewsItem("https://newsmd2fr.keeng.vn/tiin/archive/imageslead/2024/05/16/3p5foojxpm06zsxnwyb61fhdvmk8mrbv.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
-    )
-
+fun TrendingNewsList(newsItems: List<NewsItem>) {
     LazyRow(
         modifier = Modifier
             .padding(top = 16.dp, start = 16.dp, end = 16.dp),
@@ -153,11 +157,12 @@ fun TrendingNewsList() {
 @OptIn(ExperimentalCoilApi::class)
 @Composable
 fun TrendingNewsItemBox(newsItem: NewsItem) {
-    val painter = rememberAsyncImagePainter(newsItem.imageUrl)
+    val painter = rememberAsyncImagePainter(newsItem.image_url)
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .padding(start = 8.dp,end = 8.dp, top = 8.dp, bottom = 16.dp)
+            .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 16.dp)
             .width(300.dp)
             .shadow(
                 elevation = 7.dp,  // Adjust this value to increase/decrease shadow size
@@ -187,7 +192,7 @@ fun TrendingNewsItemBox(newsItem: NewsItem) {
 
         Text(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
-            text = newsItem.description,
+            text = newsItem.title,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             style = TextStyle(textAlign = TextAlign.Justify),
@@ -196,19 +201,25 @@ fun TrendingNewsItemBox(newsItem: NewsItem) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
+        ClickableText(
+            text = AnnotatedString("source"),
+            style = TextStyle(
+                fontSize = 25.sp,
+                color = Green40,
+                fontWeight = FontWeight.W600,
+            ),
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
-            text = newsItem.source,
-            fontSize = 25.sp,
-            color = Green40,
-            fontWeight = FontWeight.W600,
+            onClick = {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(newsItem.link))
+                context.startActivity(intent)
+            }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-            text = newsItem.footer,
+            text = newsItem.pubDate,
             fontSize = 14.sp,
             color = Color.Gray
         )
@@ -250,12 +261,7 @@ fun WorldNewsHeader() {
 }
 
 @Composable
-fun WorldNewsList() {
-    val newsItems = listOf(
-        NewsItem("https://elacademy.edu.vn/wp-content/uploads/2024/05/Nhin-lai-nhan-sac-cua-Kim-Ji-Won-qua-tung.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
-        NewsItem("https://newsmd2fr.keeng.vn/tiin/archive/imageslead/2024/05/16/3p5foojxpm06zsxnwyb61fhdvmk8mrbv.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
-        NewsItem("https://newsmd2fr.keeng.vn/tiin/archive/imageslead/2024/05/16/3p5foojxpm06zsxnwyb61fhdvmk8mrbv.jpg", "Sự thăng hạng trong phong cách của Kim Ji Won là nhờ 3 \"bí kíp\"", "ScreenRant", "3 days a go"),
-    )
+fun WorldNewsList(newsItems: List<NewsItem>) {
 
     Column(
         modifier = Modifier
@@ -272,7 +278,7 @@ fun WorldNewsList() {
 @OptIn(ExperimentalCoilApi::class)
 @Composable
 fun WorldNewsItemBox(newsItem: NewsItem) {
-    val painter = rememberAsyncImagePainter(newsItem.imageUrl)
+    val painter = rememberAsyncImagePainter(newsItem.image_url)
     Row(
         modifier = Modifier
             .padding(top = 8.dp, bottom = 24.dp, start = 24.dp, end = 24.dp)
@@ -308,7 +314,7 @@ fun WorldNewsItemBox(newsItem: NewsItem) {
 
         Text(
             modifier = Modifier.padding(end = 30.dp),
-            text = newsItem.description,
+            text = newsItem.title,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             lineHeight = 30.sp,
@@ -318,7 +324,7 @@ fun WorldNewsItemBox(newsItem: NewsItem) {
 
         Text(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
-            text = newsItem.source,
+            text = newsItem.link,
             fontSize = 25.sp,
             color = Green40,
             fontWeight = FontWeight.W600,
@@ -328,7 +334,7 @@ fun WorldNewsItemBox(newsItem: NewsItem) {
 
         Text(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp),
-            text = newsItem.footer,
+            text = newsItem.pubDate,
             fontSize = 14.sp,
             color = Color.Gray
         )
@@ -344,7 +350,22 @@ fun PreviewAdvanced() {
 }
 
 @Composable
-fun Advanced() {
+fun Advanced(viewModel: AdvancedViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+    var selectedCategory by remember { mutableStateOf("top") }
+    LaunchedEffect(selectedCategory) {
+        viewModel.fetchNewsByCategory(selectedCategory)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            println("cancel")
+            viewModel.cancelJob()
+        }
+    }
+
+    val newsItem by viewModel.newsItems.collectAsState()
+
+
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
             Box(
@@ -354,8 +375,10 @@ fun Advanced() {
             ) {
                 Column {
                     TrendingNewsHeader()
-                    CategoryList()
-                    TrendingNewsList()
+                    CategoryList(selectedCategory) {category ->
+                        selectedCategory = category
+                    }
+                    TrendingNewsList(newsItem)
                 }
             }
         }
@@ -365,8 +388,13 @@ fun Advanced() {
                     .background(Grey40)
                     .fillMaxSize()
             ) {
+                LaunchedEffect(Unit) {
+                    viewModel.fetchNewsWorld()
+                }
+
+                val newsWorldItem by viewModel.newsWorldItems.collectAsState()
                 WorldNewsHeader()
-                WorldNewsList()
+                WorldNewsList(newsWorldItem)
             }
         }
     }
