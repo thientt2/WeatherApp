@@ -182,7 +182,7 @@ fun TrendingNewsItemBox(newsItem: NewsItem, onItemClick: (NewsItem) -> Unit) {
                 spotColor = Color.Black.copy(alpha = 0.4f)     // Lower alpha for less blur
             )
             .background(Color.White)
-            .clickable { /* Handle click */ }
+            .clickable { onItemClick(newsItem) }
 
     ) {
         Box(
@@ -273,7 +273,7 @@ fun WorldNewsHeader() {
 }
 
 @Composable
-fun WorldNewsList(newsItems: List<NewsItem>) {
+fun WorldNewsList(newsItems: List<NewsItem>, onItemClick: (NewsItem) -> Unit) {
 
     Column(
         modifier = Modifier
@@ -282,14 +282,14 @@ fun WorldNewsList(newsItems: List<NewsItem>) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         newsItems.forEach { newsItem ->
-            WorldNewsItemBox(newsItem)
+            WorldNewsItemBox(newsItem, onItemClick)
         }
     }
 }
 
 @OptIn(ExperimentalCoilApi::class)
 @Composable
-fun WorldNewsItemBox(newsItem: NewsItem) {
+fun WorldNewsItemBox(newsItem: NewsItem, onItemClick: (NewsItem) -> Unit) {
     val painter = rememberAsyncImagePainter(newsItem.image_url)
     Row(
         modifier = Modifier
@@ -303,8 +303,8 @@ fun WorldNewsItemBox(newsItem: NewsItem) {
                 spotColor = Color.Black.copy(alpha = 0.4f)     // Lower alpha for less blur
             )
             .background(Color.White)
-            .clickable { /* Handle click */ },
-    verticalAlignment = Alignment.CenterVertically,
+            .clickable { onItemClick(newsItem) },
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
@@ -356,7 +356,7 @@ fun WorldNewsItemBox(newsItem: NewsItem) {
 }
 
 @Composable
-fun TrendingNewsDetail(newsItem: NewsItem, onBackClicked: () -> Unit) {
+fun NewsDetail(newsItem: NewsItem, onBackClicked: () -> Unit) {
     val painter = rememberAsyncImagePainter(newsItem.image_url)
     val context = LocalContext.current
     Scaffold(
@@ -554,13 +554,15 @@ fun Advanced(viewModel: AdvancedViewModel = androidx.lifecycle.viewmodel.compose
 
                 val newsWorldItem by viewModel.newsWorldItems.collectAsState()
                 WorldNewsHeader()
-                WorldNewsList(newsWorldItem)
+                WorldNewsList(newsWorldItem) { newsItem ->
+                    setSelectedNewsItem(newsItem)
+                }
             }
         }
     }
 
     selectedNewsItem?.let { newsItem ->
-        TrendingNewsDetail(newsItem) {
+        NewsDetail(newsItem) {
             setSelectedNewsItem(null) // Đặt lại tin tức được chọn về null khi nhấn nút Back
         }
     }
