@@ -20,6 +20,7 @@ class AdvancedViewModel : ViewModel() {
     private var job: Job? = null
     private var jobWorld: Job? = null
     fun fetchNewsByCategory(category: String = "top") {
+        job?.cancel()
         job = viewModelScope.launch {
             try {
                 val response = RetrofitInstance.api.getLatestNews("vi", category, "pub_44426632a2d70cbb0c1d54e91dab73cce58a9")
@@ -32,6 +33,7 @@ class AdvancedViewModel : ViewModel() {
     }
 
     fun fetchNewsWorld() {
+        jobWorld?.cancel()
         jobWorld = viewModelScope.launch {
             try {
                 val response = RetrofitInstance.api.getLatestNews("vi", "world", "pub_44426632a2d70cbb0c1d54e91dab73cce58a9")

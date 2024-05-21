@@ -11,6 +11,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+//import androidx.compose.foundation.layout.FlowColumnScopeInstance.align
+//import androidx.compose.foundation.layout.FlowColumnScopeInstance.align
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -32,6 +34,7 @@ import androidx.compose.material.MaterialTheme
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -267,15 +270,28 @@ fun WorldNewsHeader() {
 
 @Composable
 fun WorldNewsList(newsItems: List<NewsItem>) {
-
+    var isLoading by remember { mutableStateOf(true) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 78.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        newsItems.forEach { newsItem ->
-            WorldNewsItemBox(newsItem)
+        if (isLoading && newsItems.isEmpty()) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .size(50.dp)
+                    .align(Alignment.CenterHorizontally)
+//                    .padding(top = 30.dp)
+                , // Adjust padding as needed
+                color = Green40,
+                strokeWidth = 4.dp
+            )
+        } else {
+            isLoading = false
+            newsItems.forEach { newsItem ->
+                WorldNewsItemBox(newsItem)
+            }
         }
     }
 }
@@ -360,7 +376,7 @@ fun PreviewAdvanced() {
 fun Advanced(viewModel: AdvancedViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     var selectedCategory by remember { mutableStateOf("top") }
     LaunchedEffect(selectedCategory) {
-        viewModel.fetchNewsByCategory(selectedCategory)
+      viewModel.fetchNewsByCategory(selectedCategory)
     }
 
     DisposableEffect(Unit) {
@@ -381,11 +397,23 @@ fun Advanced(viewModel: AdvancedViewModel = androidx.lifecycle.viewmodel.compose
                     .fillMaxSize()
             ) {
                 Column {
+                    var isLoading by remember { mutableStateOf(true) }
                     TrendingNewsHeader()
                     CategoryList(selectedCategory) {category ->
                         selectedCategory = category
                     }
-                    TrendingNewsList(newsItem)
+                    if(isLoading && newsItem.isEmpty()){
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .align(Alignment.CenterHorizontally),
+                            color = Green40,
+                            strokeWidth = 4.dp
+                        )
+                    }else{
+                        isLoading = false
+                        TrendingNewsList(newsItem)
+                    }
                 }
             }
         }
@@ -398,7 +426,6 @@ fun Advanced(viewModel: AdvancedViewModel = androidx.lifecycle.viewmodel.compose
                 LaunchedEffect(Unit) {
                     viewModel.fetchNewsWorld()
                 }
-
                 val newsWorldItem by viewModel.newsWorldItems.collectAsState()
                 WorldNewsHeader()
                 WorldNewsList(newsWorldItem)
