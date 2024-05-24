@@ -14,6 +14,7 @@ val GreenCL = Color(0xFF3FDC85)
 val Green40 = Color(0xFF6B9B42)
 
 val Grey40 = Color(0xFFE9E9E9)
+val Grey60 = Color(0xFF757575)
 val Grey80 = Color(0xFF444444)
 
 val NavyBlue = Color(0xFF08244F)
@@ -27,6 +28,9 @@ val LightSky = Color(0xFF2DC8EA)
 val Sky60 = Color(0xFF319CCC)
 val Sky80 = Color(0xFF268BB9)
 
+val Blue20 = Color(0xFF1A73E8)
 val Blue40 = Color(0xFF91DEFF)
 val Blue60 = Color(0xFF4B337B)
 val Blue80 = Color(0xFF2F226B)
+
+val Black20 = Color(0xFF161616)
