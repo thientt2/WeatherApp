@@ -320,7 +320,7 @@ fun SpecificInfo (mainColor: Color) {
     val nounHumidityPainter: Painter = painterResource(id = R.drawable.nounhumidity)
     val nounWindPainter: Painter = painterResource(id = R.drawable.nounwind)
     Box(
-        modifier = Modifier.padding(start = 52.dp, end = 52.dp)
+        modifier = Modifier.padding(start = 32.dp, end = 32.dp)
     ) {
         Row(
             modifier = Modifier
@@ -418,7 +418,7 @@ fun TodayInfo(hourlyInfoList: List<HourlyInfo>, mainColor: Color, secondaryColor
     }
 
     Box(
-        modifier = Modifier.padding(start = 52.dp, end = 52.dp)
+        modifier = Modifier.padding(start = 32.dp, end = 32.dp)
     ) {
         Column(
             modifier = Modifier
@@ -460,14 +460,13 @@ fun TodayInfo(hourlyInfoList: List<HourlyInfo>, mainColor: Color, secondaryColor
 
                     Box(
                         modifier = Modifier
-                            .size(width = 70.dp, height = 155.dp)
-                            .padding(top = 20.dp)
+                            .padding(top = 20.dp, bottom = 20.dp)
                             .background(if (isCurrentHour) secondaryColor else mainColor)
 
                     ) {
                         Column(
                             modifier = Modifier
-                                .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+                                .padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
@@ -503,7 +502,7 @@ fun TodayInfo(hourlyInfoList: List<HourlyInfo>, mainColor: Color, secondaryColor
 @Composable
 fun NextForecast (forecastList: List<Forecast>, mainColor: Color) {
     Box(
-        modifier = Modifier.padding(start = 52.dp, end = 52.dp)
+        modifier = Modifier.padding(start = 32.dp, end = 32.dp)
     ) {
         Column (
             modifier = Modifier
