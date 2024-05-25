@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
@@ -35,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -96,7 +94,9 @@ class MainActivity : ComponentActivity() {
                 if (location != null) {
                     LaunchedEffect(location) {
                         weatherViewModel.fetchWeather(location!!.latitude, location!!.longitude)
+
                     }
+                    ShowLocation(location!!.latitude,location!!.longitude)
 
                     if (weather != null) {
                         BottomNavigation(weatherViewModel)
@@ -112,6 +112,11 @@ class MainActivity : ComponentActivity() {
                 Text(text = "Permission required to access location.")
             }
         }
+    }
+
+    @Composable
+    fun ShowLocation(lat:Double, lng: Double) {
+        Text(text = "${lat.toString()},${lng.toString()}")
     }
 
     @Composable

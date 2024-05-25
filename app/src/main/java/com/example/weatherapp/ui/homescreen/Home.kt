@@ -60,6 +60,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.example.weatherapp.modal.weather.Hourly
 import com.example.weatherapp.ui.theme.Blue60
 import com.example.weatherapp.ui.theme.Blue80
 import com.example.weatherapp.ui.theme.Sky80
@@ -71,6 +72,8 @@ import com.example.weatherapp.ui.theme.NavySky
 import com.example.weatherapp.viewmodal.WeatherViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 
@@ -102,17 +105,46 @@ fun Home(weatherViewModel: WeatherViewModel) {
     var precip = ""
     var humi = ""
     var windSpeed = ""
+    var hourlyInfoList = mutableMapOf<String, String>()
+    val filteredHourlyData = mutableListOf<Hourly>()
+    var weatherDate = ""
 
-    weatherRespone.let {
-        tempC = it?.data?.current_condition?.get(0)?.temp_C ?: "Loading..."
-        desc = it?.data?.current_condition?.get(0)?.weatherDesc?.get(0)?.value ?: "Loading..."
-        maxtemp = it?.data?.weather?.get(0)?.maxtempC ?: "Loading..."
-        mintemp = it?.data?.weather?.get(0)?.mintempC ?: "Loading..."
-        icon = it?.data?.current_condition?.get(0)?.weatherIconUrl?.get(0)?.value ?: ""
-        precip = it?.data?.current_condition?.get(0)?.precipMM ?: "Loading..."
-        humi = it?.data?.current_condition?.get(0)?.humidity ?: "Loading..."
-        windSpeed = it?.data?.current_condition?.get(0)?.windspeedKmph ?: "Loading..."
+    weatherRespone.let {data ->
+        tempC = data?.data?.current_condition?.get(0)?.temp_C ?: "Loading..."
+        desc = data?.data?.current_condition?.get(0)?.weatherDesc?.get(0)?.value ?: "Loading..."
+        maxtemp = data?.data?.weather?.get(0)?.maxtempC ?: "Loading..."
+        mintemp = data?.data?.weather?.get(0)?.mintempC ?: "Loading..."
+        icon = data?.data?.current_condition?.get(0)?.weatherIconUrl?.get(0)?.value ?: ""
+        precip = data?.data?.current_condition?.get(0)?.precipMM ?: "Loading..."
+        humi = data?.data?.current_condition?.get(0)?.humidity ?: "Loading..."
+        windSpeed = data?.data?.current_condition?.get(0)?.windspeedKmph ?: "Loading..."
+        weatherDate = data?.data?.weather?.get(0)?.date.toString()
+
+        val weatherDataList = data?.data?.weather
+        val now = LocalDateTime.now()
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
+
+
+        if (weatherDataList != null) {
+            for(weatherData in weatherDataList){
+                val date = weatherData.date
+
+                for(hourly in weatherData.hourly){
+                    val time = hourly.time.padStart(4, '0') // Đảm bảo thời gian có định dạng 4 chữ số
+                    val dateTimeStr = "$date ${time.substring(0, 2)}:${time.substring(2, 4)}"
+                    val dateTime = LocalDateTime.parse(dateTimeStr, formatter)
+
+                    if (dateTime.isAfter(now.minusHours(1)) && dateTime.isBefore(now.plusHours(24))) {
+                        filteredHourlyData.add(hourly)
+                    }
+                }
+
+            }
+        }
+
     }
+
 
     val gradientBrush = if (isRainy) {
         Brush.linearGradient(
@@ -168,20 +200,7 @@ fun Home(weatherViewModel: WeatherViewModel) {
                 Spacer(modifier = Modifier.height(30.dp))
             }
             item {
-                val sampleHourlyInfo = listOf(
-                    HourlyInfo("29°C", Icons.Default.WbSunny, "15:00"),
-                    HourlyInfo("26°C", Icons.Default.WbSunny, "16:00"),
-                    HourlyInfo("24°C", Icons.Default.Cloud, "17:00"),
-                    HourlyInfo("23°C", Icons.Default.NightlightRound, "18:00"),
-                    HourlyInfo("23°C", Icons.Default.NightlightRound, "19:00"),
-                    HourlyInfo("29°C", Icons.Default.WbSunny, "20:00"),
-                    HourlyInfo("26°C", Icons.Default.WbSunny, "21:00"),
-                    HourlyInfo("24°C", Icons.Default.Cloud, "22:00"),
-                    HourlyInfo("23°C", Icons.Default.NightlightRound, "23:00"),
-                    HourlyInfo("23°C", Icons.Default.NightlightRound, "24:00"),
-                )
-
-                TodayInfo(hourlyInfoList = sampleHourlyInfo, mainColor, secondaryColor)
+                TodayInfo(filteredHourlyData,weatherDate, mainColor, secondaryColor)
                 Spacer(modifier = Modifier.height(30.dp))
             }
             item {
@@ -401,28 +420,27 @@ fun SpecificInfo (mainColor: Color) {
 }
 
 @Composable
-fun TodayInfo(hourlyInfoList: List<HourlyInfo>, mainColor: Color, secondaryColor: Color) {
+fun TodayInfo(filteredHourlyData: MutableList<Hourly>,weatherDate: String,mainColor: Color, secondaryColor: Color) {
     val currentHour = SimpleDateFormat("HH", Locale.getDefault()).format(Date()).toInt()
 
     val lazyListState = rememberLazyListState()
-    val currentIndex = hourlyInfoList.indexOfFirst {
-        it.hour.split(":")[0].toInt() == currentHour
-    }
+//    val currentIndex = filteredHourlyData.indexOfFirst {
+//        it.hour.split(":")[0].toInt() == currentHour
+//    }
 
-    LaunchedEffect(currentIndex) {
-        if (currentIndex != -1) {
-            launch {
-                lazyListState.scrollToItem(currentIndex)
-            }
-        }
-    }
+//    LaunchedEffect(currentIndex) {
+//        if (currentIndex != -1) {
+//            launch {
+//                lazyListState.scrollToItem(currentIndex)
+//            }
+//        }
+//    }
 
     Box(
         modifier = Modifier.padding(start = 32.dp, end = 32.dp)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .height(217.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(mainColor), // Blue80
@@ -442,7 +460,7 @@ fun TodayInfo(hourlyInfoList: List<HourlyInfo>, mainColor: Color, secondaryColor
                 Spacer(modifier = Modifier.weight(1f))
 
                 Text(
-                    text = SimpleDateFormat("MMM, d", Locale.getDefault()).format(Date()),
+                    text = weatherDate,
                     fontSize = 18.sp,
                     color = Color.White,
                 )
@@ -453,9 +471,9 @@ fun TodayInfo(hourlyInfoList: List<HourlyInfo>, mainColor: Color, secondaryColor
                 modifier = Modifier.padding(start = 14.dp, end = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(hourlyInfoList.size) { index ->
-                    val info = hourlyInfoList[index]
-                    val hourInt = info.hour.split(":")[0].toInt()
+                items(filteredHourlyData.size) { index ->
+                    val info = filteredHourlyData[index]
+                    val hourInt = info.time.split(":")[0].toInt()
                     val isCurrentHour = hourInt == currentHour
 
                     Box(
@@ -466,11 +484,11 @@ fun TodayInfo(hourlyInfoList: List<HourlyInfo>, mainColor: Color, secondaryColor
                     ) {
                         Column(
                             modifier = Modifier
-                                .padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 12.dp),
+                                .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = info.temperature,
+                                text = info.tempC + "°C",
                                 fontSize = 18.sp,
                                 color = Color.White,
                             )
@@ -478,25 +496,34 @@ fun TodayInfo(hourlyInfoList: List<HourlyInfo>, mainColor: Color, secondaryColor
                             Spacer(modifier = Modifier.weight(1f))
 
                             Icon(
-                                imageVector = info.icon,
+                                painter = rememberAsyncImagePainter(info.weatherIconUrl.get(0).value),
                                 contentDescription = "Weather icon",
-                                tint = if (info.icon == Icons.Default.WbSunny) Color.Yellow else Color.White,
                                 modifier = Modifier.size(43.dp)
                             )
 
                             Spacer(modifier = Modifier.weight(1f))
 
                             Text(
-                                text = info.hour,
+                                text = if (isCurrentHour) "Now" else convertToTimeFormat(info.time),
                                 fontSize = 18.sp,
                                 color = Color.White,
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp))
                 }
             }
         }
     }
+
+}
+
+fun convertToTimeFormat(time: String): String {
+    val number = time.toInt()
+    val hour = number / 100
+    val minute = number % 100
+    return "$hour:${String.format("%02d", minute)}"
 }
 
 @Composable
