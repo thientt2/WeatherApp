@@ -6,9 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -63,6 +65,7 @@ import com.example.weatherapp.ui.theme.Blue80
 import com.example.weatherapp.ui.theme.Sky80
 import com.example.weatherapp.ui.theme.Sky60
 import com.example.weatherapp.ui.theme.DeepSky
+import com.example.weatherapp.ui.theme.Grey60
 import com.example.weatherapp.ui.theme.LightSky
 import com.example.weatherapp.ui.theme.NavySky
 import com.example.weatherapp.viewmodal.WeatherViewModel
@@ -143,54 +146,56 @@ fun Home(weatherViewModel: WeatherViewModel) {
             .background(brush = gradientBrush)
     ) {
         Header(onNotificationClick = { isRainy = !isRainy })
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .matchParentSize()
                 .align(Alignment.Center)
                 .padding(top = 60.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            MainInfo(
-                tempC = tempC,
-                desc = desc,
-                maxtemp = maxtemp,
-                mintemp = mintemp,
-                iconWeather = icon,
-            )
-            Spacer(modifier = Modifier.height(30.dp))
-            SpecificInfo(mainColor)
-            Spacer(modifier = Modifier.height(30.dp))
-            LazyColumn (
-            ) {
-                item {
-                    val sampleHourlyInfo = listOf(
-                        HourlyInfo("29°C", Icons.Default.WbSunny, "15:00"),
-                        HourlyInfo("26°C", Icons.Default.WbSunny, "16:00"),
-                        HourlyInfo("24°C", Icons.Default.Cloud, "17:00"),
-                        HourlyInfo("23°C", Icons.Default.NightlightRound, "18:00"),
-                        HourlyInfo("23°C", Icons.Default.NightlightRound, "19:00"),
-                        HourlyInfo("29°C", Icons.Default.WbSunny, "20:00"),
-                        HourlyInfo("26°C", Icons.Default.WbSunny, "21:00"),
-                        HourlyInfo("24°C", Icons.Default.Cloud, "22:00"),
-                        HourlyInfo("23°C", Icons.Default.NightlightRound, "23:00"),
-                        HourlyInfo("23°C", Icons.Default.NightlightRound, "24:00"),
+            item {
+                MainInfo(
+                    tempC = tempC,
+                    desc = desc,
+                    maxtemp = maxtemp,
+                    mintemp = mintemp,
+                    iconWeather = icon,
+                )
+                Spacer(modifier = Modifier.height(30.dp))
+            }
+            item {
+                SpecificInfo(mainColor)
+                Spacer(modifier = Modifier.height(30.dp))
+            }
+            item {
+                val sampleHourlyInfo = listOf(
+                    HourlyInfo("29°C", Icons.Default.WbSunny, "15:00"),
+                    HourlyInfo("26°C", Icons.Default.WbSunny, "16:00"),
+                    HourlyInfo("24°C", Icons.Default.Cloud, "17:00"),
+                    HourlyInfo("23°C", Icons.Default.NightlightRound, "18:00"),
+                    HourlyInfo("23°C", Icons.Default.NightlightRound, "19:00"),
+                    HourlyInfo("29°C", Icons.Default.WbSunny, "20:00"),
+                    HourlyInfo("26°C", Icons.Default.WbSunny, "21:00"),
+                    HourlyInfo("24°C", Icons.Default.Cloud, "22:00"),
+                    HourlyInfo("23°C", Icons.Default.NightlightRound, "23:00"),
+                    HourlyInfo("23°C", Icons.Default.NightlightRound, "24:00"),
+                )
 
-                    )
-
-                    TodayInfo(hourlyInfoList = sampleHourlyInfo, mainColor, secondaryColor)
-                    Spacer(modifier = Modifier.height(30.dp))
-                    val sampleForecasts = listOf(
-                        Forecast("Monday", "13°C", "10°C", Icons.Default.WbCloudy),
-                        Forecast("Tuesday", "15°C", "12°C", Icons.Default.WbSunny),
-                        Forecast("Wednesday", "17°C", "14°C", Icons.Default.WbCloudy),
-                        Forecast("Thursday", "18°C", "15°C", Icons.Default.WbSunny),
-                        Forecast("Friday", "20°C", "16°C", Icons.Default.WbCloudy),
-                        Forecast("Saturday", "22°C", "18°C", Icons.Default.WbSunny),
-                        Forecast("Sunday", "21°C", "17°C", Icons.Default.WbCloudy)
-                    )
-                    NextForecast(forecastList = sampleForecasts, mainColor)
-                }
+                TodayInfo(hourlyInfoList = sampleHourlyInfo, mainColor, secondaryColor)
+                Spacer(modifier = Modifier.height(30.dp))
+            }
+            item {
+                val sampleForecasts = listOf(
+                    Forecast("Monday", "13°C", "10°C", Icons.Default.WbCloudy),
+                    Forecast("Tuesday", "15°C", "12°C", Icons.Default.WbSunny),
+                    Forecast("Wednesday", "17°C", "14°C", Icons.Default.WbCloudy),
+                    Forecast("Thursday", "18°C", "15°C", Icons.Default.WbSunny),
+                    Forecast("Friday", "20°C", "16°C", Icons.Default.WbCloudy),
+                    Forecast("Saturday", "22°C", "18°C", Icons.Default.WbSunny),
+                    Forecast("Sunday", "21°C", "17°C", Icons.Default.WbCloudy)
+                )
+                NextForecast(forecastList = sampleForecasts, mainColor)
+                Spacer(modifier = Modifier.height(30.dp))
             }
         }
     }
@@ -314,78 +319,83 @@ fun SpecificInfo (mainColor: Color) {
     val nounRainPainter: Painter = painterResource(id = R.drawable.nounrain)
     val nounHumidityPainter: Painter = painterResource(id = R.drawable.nounhumidity)
     val nounWindPainter: Painter = painterResource(id = R.drawable.nounwind)
-    Row(
-        modifier = Modifier
-            .size(width = 343.dp, height = 47.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(mainColor),
-            verticalAlignment = Alignment.CenterVertically,
+    Box(
+        modifier = Modifier.padding(start = 52.dp, end = 52.dp)
     ) {
         Row(
             modifier = Modifier
-                .padding(top = 13.dp, bottom = 13.dp, start = 10.dp),
+                .fillMaxWidth()
+                .height(47.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(mainColor),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Image(
-                painter = nounRainPainter,
-                contentDescription = "Description of the image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(24.dp, 24.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .padding(top = 13.dp, bottom = 13.dp, start = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Image(
+                    painter = nounRainPainter,
+                    contentDescription = "Description of the image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(24.dp, 24.dp)
+                )
 
-            Text(
-                modifier = Modifier.padding(start = 5.dp),
-                text = "6%",
-                fontSize = 14.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+                Text(
+                    modifier = Modifier.padding(start = 5.dp),
+                    text = "6%",
+                    fontSize = 14.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
 
-        Row(
-            modifier = Modifier
-                .padding(top = 13.dp, bottom = 13.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Image(
-                painter = nounHumidityPainter,
-                contentDescription = "Description of the image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(24.dp, 24.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .padding(top = 13.dp, bottom = 13.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Image(
+                    painter = nounHumidityPainter,
+                    contentDescription = "Description of the image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(24.dp, 24.dp)
+                )
 
-            Text(
-                modifier = Modifier.padding(start = 5.dp),
-                text = "90%",
-                fontSize = 14.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+                Text(
+                    modifier = Modifier.padding(start = 5.dp),
+                    text = "90%",
+                    fontSize = 14.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
 
-        Row(
-            modifier = Modifier
-                .padding(top = 13.dp, bottom = 13.dp, end = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Image(
-                painter = nounWindPainter,
-                contentDescription = "Description of the image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(24.dp, 24.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .padding(top = 13.dp, bottom = 13.dp, end = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Image(
+                    painter = nounWindPainter,
+                    contentDescription = "Description of the image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(24.dp, 24.dp)
+                )
 
-            Text(
-                modifier = Modifier.padding(start = 5.dp),
-                text = "19 km/h",
-                fontSize = 14.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-            )
+                Text(
+                    modifier = Modifier.padding(start = 5.dp),
+                    text = "19 km/h",
+                    fontSize = 14.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
         }
     }
 }
@@ -407,80 +417,84 @@ fun TodayInfo(hourlyInfoList: List<HourlyInfo>, mainColor: Color, secondaryColor
         }
     }
 
-    Column(
-        modifier = Modifier
-            .size(width = 343.dp, height = 217.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(mainColor), // Blue80
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier = Modifier.padding(start = 52.dp, end = 52.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(start = 17.dp, end = 17.dp, top = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(217.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(mainColor), // Blue80
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Today",
-                fontSize = 20.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Today",
+                    fontSize = 20.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
 
-            Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
 
-            Text(
-                text = SimpleDateFormat("MMM, d", Locale.getDefault()).format(Date()),
-                fontSize = 18.sp,
-                color = Color.White,
-            )
-        }
+                Text(
+                    text = SimpleDateFormat("MMM, d", Locale.getDefault()).format(Date()),
+                    fontSize = 18.sp,
+                    color = Color.White,
+                )
+            }
 
-        LazyRow(
-            state = lazyListState,
-            modifier = Modifier.padding(start = 17.dp, end = 17.dp),
-        ) {
-            items(hourlyInfoList.size) { index ->
-                val info = hourlyInfoList[index]
-                val hourInt = info.hour.split(":")[0].toInt()
-                val isCurrentHour = hourInt == currentHour
+            LazyRow(
+                state = lazyListState,
+                modifier = Modifier.padding(start = 14.dp, end = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(hourlyInfoList.size) { index ->
+                    val info = hourlyInfoList[index]
+                    val hourInt = info.hour.split(":")[0].toInt()
+                    val isCurrentHour = hourInt == currentHour
 
-                Box(
-                    modifier = Modifier
-                        .size(width = 70.dp, height = 155.dp)
-                        .padding(top = 20.dp)
-                        .background(if (isCurrentHour) secondaryColor else mainColor)
-
-                ) {
-                    Column(
+                    Box(
                         modifier = Modifier
-                            .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .size(width = 70.dp, height = 155.dp)
+                            .padding(top = 20.dp)
+                            .background(if (isCurrentHour) secondaryColor else mainColor)
+
                     ) {
-                        Text(
-                            text = info.temperature,
-                            fontSize = 18.sp,
-                            color = Color.White,
-                        )
+                        Column(
+                            modifier = Modifier
+                                .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = info.temperature,
+                                fontSize = 18.sp,
+                                color = Color.White,
+                            )
 
-                        Spacer(modifier = Modifier.weight(1f))
+                            Spacer(modifier = Modifier.weight(1f))
 
-                        Icon(
-                            imageVector = info.icon,
-                            contentDescription = "Weather icon",
-                            tint = if (info.icon == Icons.Default.WbSunny) Color.Yellow else Color.White,
-                            modifier = Modifier.size(43.dp)
-                        )
+                            Icon(
+                                imageVector = info.icon,
+                                contentDescription = "Weather icon",
+                                tint = if (info.icon == Icons.Default.WbSunny) Color.Yellow else Color.White,
+                                modifier = Modifier.size(43.dp)
+                            )
 
-                        Spacer(modifier = Modifier.weight(1f))
+                            Spacer(modifier = Modifier.weight(1f))
 
-                        Text(
-                            text = info.hour,
-                            fontSize = 18.sp,
-                            color = Color.White,
-                        )
+                            Text(
+                                text = info.hour,
+                                fontSize = 18.sp,
+                                color = Color.White,
+                            )
+                        }
                     }
                 }
-
-                Spacer(modifier = Modifier.width(8.dp))
             }
         }
     }
@@ -488,35 +502,40 @@ fun TodayInfo(hourlyInfoList: List<HourlyInfo>, mainColor: Color, secondaryColor
 
 @Composable
 fun NextForecast (forecastList: List<Forecast>, mainColor: Color) {
-    Column (
-        modifier = Modifier
-            .size(width = 343.dp, height = 330.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(mainColor),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier = Modifier.padding(start = 52.dp, end = 52.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(start = 17.dp, end = 17.dp, top = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column (
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(330.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(mainColor),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Weekly Forecast",
-                fontSize = 20.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(
+                modifier = Modifier.padding(start = 17.dp, end = 17.dp, top = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Weekly Forecast",
+                    fontSize = 20.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
 
-            Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
 
-            Icon(
-                imageVector = Icons.Default.CalendarMonth,
-                contentDescription = "Description of the icon",
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        forecastList.forEach { forecast ->
-            NextForecastItem(forecast)
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = "Description of the icon",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            forecastList.forEach { forecast ->
+                NextForecastItem(forecast)
+            }
         }
     }
 }

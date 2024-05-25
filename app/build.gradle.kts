@@ -126,6 +126,4 @@ dependencies {
     implementation ("com.google.accompanist:accompanist-permissions:0.30.1")
     implementation ("io.coil-kt:coil-compose:2.0.0")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
-
-
 }
