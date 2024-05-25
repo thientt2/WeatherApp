@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +57,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.example.weatherapp.ui.theme.Blue60
 import com.example.weatherapp.ui.theme.Blue80
 import com.example.weatherapp.ui.theme.Sky80
@@ -63,6 +65,7 @@ import com.example.weatherapp.ui.theme.Sky60
 import com.example.weatherapp.ui.theme.DeepSky
 import com.example.weatherapp.ui.theme.LightSky
 import com.example.weatherapp.ui.theme.NavySky
+import com.example.weatherapp.viewmodal.WeatherViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -83,8 +86,31 @@ data class HourlyInfo(
 )
 
 @Composable
-fun Home() {
+fun Home(weatherViewModel: WeatherViewModel) {
     var isRainy by remember { mutableStateOf(true) }
+
+    val weatherRespone by weatherViewModel.weather.collectAsState()
+
+    var tempC = ""
+    var desc = ""
+    var maxtemp = ""
+    var mintemp = ""
+    var icon = ""
+    var precip = ""
+    var humi = ""
+    var windSpeed = ""
+
+    weatherRespone.let {
+        tempC = it?.data?.current_condition?.get(0)?.temp_C ?: "Loading..."
+        desc = it?.data?.current_condition?.get(0)?.weatherDesc?.get(0)?.value ?: "Loading..."
+        maxtemp = it?.data?.weather?.get(0)?.maxtempC ?: "Loading..."
+        mintemp = it?.data?.weather?.get(0)?.mintempC ?: "Loading..."
+        icon = it?.data?.current_condition?.get(0)?.weatherIconUrl?.get(0)?.value ?: ""
+        precip = it?.data?.current_condition?.get(0)?.precipMM ?: "Loading..."
+        humi = it?.data?.current_condition?.get(0)?.humidity ?: "Loading..."
+        windSpeed = it?.data?.current_condition?.get(0)?.windspeedKmph ?: "Loading..."
+    }
+
     val gradientBrush = if (isRainy) {
         Brush.linearGradient(
             colors = listOf(NavyBlue, DeepBlue, LightBlue),
@@ -125,12 +151,17 @@ fun Home() {
                 horizontalAlignment = Alignment.CenterHorizontally,
 
         ) {
-            MainInfo(isRainy = isRainy)
+            MainInfo(
+                tempC = tempC,
+                desc = desc,
+                maxtemp = maxtemp,
+                mintemp = mintemp,
+                iconWeather = icon,
+            )
             Spacer(modifier = Modifier.height(30.dp))
             SpecificInfo(mainColor)
             Spacer(modifier = Modifier.height(30.dp))
             LazyColumn (
-
             ) {
                 item {
                     val sampleHourlyInfo = listOf(
@@ -162,14 +193,6 @@ fun Home() {
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewHome() {
-    WeatherAppTheme {
-        Home()
     }
 }
 
@@ -227,16 +250,15 @@ fun Header(onNotificationClick: () -> Unit) {
 }
 
 @Composable
-fun MainInfo (isRainy: Boolean) {
+fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,iconWeather: String) {
     val regularFont = FontFamily(
         Font(R.font.sfprodisplay_regular),
     )
-    val weatherIconPainter: Painter = if (isRainy) painterResource(id = R.drawable.rainicon) else painterResource(id = R.drawable.sunicon)
     Image(
-        painter = weatherIconPainter,
+        painter = rememberAsyncImagePainter(iconWeather),
         contentDescription = "Description of the image",
         contentScale = ContentScale.Crop,
-        modifier = Modifier.size(350.dp, 207.dp)
+        modifier = Modifier.size(250.dp, 180.dp)
     )
 
     Column(
@@ -245,7 +267,7 @@ fun MainInfo (isRainy: Boolean) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "28°",
+            text = "${tempC}°",
             fontSize = 64.sp,
             color = Color.White,
             fontFamily = regularFont,
@@ -258,7 +280,7 @@ fun MainInfo (isRainy: Boolean) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Precipitations",
+                text = desc,
                 fontSize = 18.sp,
                 color = Color.White,
                 fontFamily = regularFont,
@@ -269,7 +291,7 @@ fun MainInfo (isRainy: Boolean) {
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Max.:31°",
+                    text = "Max.:${maxtemp}°",
                     fontSize = 18.sp,
                     color = Color.White,
                     fontFamily = regularFont,
@@ -277,7 +299,7 @@ fun MainInfo (isRainy: Boolean) {
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
-                    text = "Min.:25°",
+                    text = "Min.:${mintemp}°",
                     fontSize = 18.sp,
                     color = Color.White,
                     fontFamily = regularFont,

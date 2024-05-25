@@ -6,7 +6,7 @@ import retrofit2.create
 
 object RetrofitInstance {
     private const val BASE_URL = "https://newsdata.io/api/1/"
-    private const val BASE_URL_WEATHER = "http://api.worldweatheronline.com/premium/v1/"
+    private const val BASE_URL_WEATHER = "https://api.worldweatheronline.com/"
 
     val api: NewsApiService by lazy {
         Retrofit.Builder()

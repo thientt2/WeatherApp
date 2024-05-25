@@ -1,6 +1,6 @@
 package com.example.weatherapp.modal.weather
 
 
-data class WeatherDesc(
+data class WeatherIconUrl(
     val value: String
 )

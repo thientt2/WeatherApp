@@ -1,16 +1,26 @@
 package com.example.weatherapp.modal.weather
 
-import com.google.gson.annotations.SerializedName
 
 data class CurrentCondition(
-    @SerializedName("temp_C") var tempC: Int? = null,
-    @SerializedName("weatherIconUrl") var weatherIcon: IconUrl? = IconUrl(),
-    @SerializedName("weatherDesc") var weatherDesc: WeatherDesc? = WeatherDesc(),
-    @SerializedName("windspeedKmph") var windspeed: Int? = null,
-    @SerializedName("humidity") var humidity: Double? = null,
-    @SerializedName("precipMM") var precipMM: Double? = null,
-    @SerializedName("visibility") var visibility: Int? = null,
-    @SerializedName("pressure") var pressure: Int? = null,
-    @SerializedName("uvIndex") var uvIndex: Int? = null,
-
-    )
+    val observation_time: String,
+    val temp_C: String,
+    val temp_F: String,
+    val weatherCode: String,
+    val weatherIconUrl: List<WeatherIconUrl>,
+    val weatherDesc: List<WeatherDesc>,
+    val windspeedMiles: String,
+    val windspeedKmph: String,
+    val winddirDegree: String,
+    val winddir16Point: String,
+    val precipMM: String,
+    val precipInches: String,
+    val humidity: String,
+    val visibility: String,
+    val visibilityMiles: String,
+    val pressure: String,
+    val pressureInches: String,
+    val cloudcover: String,
+    val FeelsLikeC: String,
+    val FeelsLikeF: String,
+    val uvIndex: String
+)

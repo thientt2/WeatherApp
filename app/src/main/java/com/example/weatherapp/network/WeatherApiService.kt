@@ -6,7 +6,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface WeatherApiService {
-    @GET("weather.ashx")
+    @GET("premium/v1/weather.ashx")
     suspend fun getWeather(
         @Query("q") location: String = "",
         @Query("key") apiKey: String = apiWeatherKey,
