@@ -123,9 +123,6 @@ fun Home(weatherViewModel: WeatherViewModel) {
         val weatherDataList = data?.data?.weather
         val now = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-
-
-
         if (weatherDataList != null) {
             for(weatherData in weatherDataList){
                 val date = weatherData.date
