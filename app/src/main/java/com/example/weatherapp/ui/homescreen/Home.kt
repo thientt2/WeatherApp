@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.NightlightRound
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.runtime.Composable
@@ -75,7 +77,9 @@ import com.example.weatherapp.ui.theme.Blue80
 import com.example.weatherapp.ui.theme.Sky80
 import com.example.weatherapp.ui.theme.Sky60
 import com.example.weatherapp.ui.theme.DeepSky
+import com.example.weatherapp.ui.theme.Grey40
 import com.example.weatherapp.ui.theme.Grey60
+import com.example.weatherapp.ui.theme.Grey80
 import com.example.weatherapp.ui.theme.LightSky
 import com.example.weatherapp.ui.theme.NavySky
 import com.example.weatherapp.viewmodal.WeatherViewModel
@@ -118,6 +122,9 @@ fun Home(weatherViewModel: WeatherViewModel) {
     val filteredHourlyData = mutableListOf<Hourly>()
     var weatherDate = ""
     var weatherCode = ""
+    var uvIndex = ""
+    var visibility = ""
+    var cloudCover = ""
 
     weatherRespone.let {data ->
         tempC = data?.data?.current_condition?.get(0)?.temp_C ?: "Loading..."
@@ -130,12 +137,13 @@ fun Home(weatherViewModel: WeatherViewModel) {
         windSpeed = data?.data?.current_condition?.get(0)?.windspeedKmph ?: "Loading..."
         weatherDate = data?.data?.weather?.get(0)?.date.toString()
         weatherCode = data?.data?.current_condition?.get(0)?.weatherCode ?: "0"
+        uvIndex = data?.data?.current_condition?.get(0)?.uvIndex ?: "Loading..."
+        visibility = data?.data?.current_condition?.get(0)?.visibilityMiles ?: "Loading..."
+        cloudCover = data?.data?.current_condition?.get(0)?.cloudcover ?: "Loading..."
 
         val weatherDataList = data?.data?.weather
         val now = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-
-
 
         if (weatherDataList != null) {
             for(weatherData in weatherDataList){
@@ -230,6 +238,10 @@ fun Home(weatherViewModel: WeatherViewModel) {
                     Forecast("Sunday", "21°C", "17°C", Icons.Default.WbCloudy)
                 )
                 NextForecast(forecastList = sampleForecasts, mainColor)
+                Spacer(modifier = Modifier.height(30.dp))
+            }
+            item {
+                MoreInfo(uvIndex, visibility, cloudCover, mainColor)
                 Spacer(modifier = Modifier.height(30.dp))
             }
         }
@@ -336,7 +348,7 @@ fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,weat
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Max.:${maxtemp}°",
+                    text = "Max: ${maxtemp}°",
                     fontSize = 18.sp,
                     color = Color.White,
                     fontFamily = regularFont,
@@ -344,7 +356,7 @@ fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,weat
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
-                    text = "Min.:${mintemp}°",
+                    text = "Min: ${mintemp}°",
                     fontSize = 18.sp,
                     color = Color.White,
                     fontFamily = regularFont,
@@ -424,7 +436,7 @@ fun SpecificInfo (mainColor: Color, precipitation: String, humidity: String, win
             modifier = Modifier
                 .fillMaxWidth()
                 .height(47.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(15.dp))
                 .background(mainColor),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -521,7 +533,7 @@ fun TodayInfo(filteredHourlyData: MutableList<Hourly>,weatherDate: String,mainCo
         Column(
             modifier = Modifier
                 .height(217.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(15.dp))
                 .background(mainColor), // Blue80
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -614,7 +626,7 @@ fun NextForecast (forecastList: List<Forecast>, mainColor: Color) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(330.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(15.dp))
                 .background(mainColor),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -682,11 +694,196 @@ fun NextForecastItem (forecast: Forecast) {
         Text(
             text = forecast.lowTemp,
             fontSize = 18.sp,
-            color = Color.Gray,
+            color = Grey60,
             fontWeight = FontWeight.Bold,
         )
     }
 }
+
+@Composable
+fun MoreInfo(uvIndex: String, visibility: String, cloudCover: String, mainColor: Color) {
+    val uvIndexInt = uvIndex.toIntOrNull() ?: 0
+    val uvDescription = when (uvIndexInt) {
+        in 0..2 -> "Low"
+        in 3..5 -> "Moderate"
+        in 6..7 -> "High"
+        in 8..10 -> "Extreme"
+        else -> "Extreme"
+    }
+
+    Box(
+        modifier = Modifier
+            .padding(start = 32.dp, end = 32.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(color = mainColor)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(top = 15.dp, bottom = 15.dp, start = 15.dp, end = 20.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.WbSunny,
+                        contentDescription = "UV Icon",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Thêm Text UV
+                    Text(
+                        text = "UV",
+                        fontSize = 20.sp,
+                        color = Grey60,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxHeight(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = uvIndex,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                        )
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Text(
+                            text = uvDescription,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(top = 10.dp)
+                        )
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(color = mainColor)
+            ) {
+                Column(
+                    modifier = Modifier.padding(top = 15.dp, bottom = 15.dp, start = 15.dp, end = 20.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.RemoveRedEye,
+                        contentDescription = "Visibility Icon",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Thêm Text UV
+                    Text(
+                        text = "Visibility",
+                        fontSize = 20.sp,
+                        color = Grey60,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Thêm thông tin UV
+                    Row(
+                        modifier = Modifier.fillMaxHeight(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = visibility,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                        )
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Text(
+                            text = "miles",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(color = mainColor)
+            ) {
+                Column(
+                    modifier = Modifier.padding(top = 15.dp, bottom = 15.dp, start = 15.dp, end = 20.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.WbCloudy,
+                        contentDescription = "UV Icon",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Thêm Text UV
+                    Text(
+                        text = "Cloud",
+                        fontSize = 20.sp,
+                        color = Grey60,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxHeight(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = cloudCover,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                        )
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Text(
+                            text = "%",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
 
 
 
