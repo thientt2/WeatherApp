@@ -1,8 +1,14 @@
 package com.example.weatherapp.ui.homescreen
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,9 +55,11 @@ import com.example.weatherapp.ui.theme.NavyBlue
 import com.example.weatherapp.ui.theme.LightBlue
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import com.example.weatherapp.ui.theme.DeepBlue
 import com.example.weatherapp.ui.theme.WeatherAppTheme
 
@@ -60,6 +68,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import coil.decode.DecodeUtils.calculateInSampleSize
 import com.example.weatherapp.modal.weather.Hourly
 import com.example.weatherapp.ui.theme.Blue60
 import com.example.weatherapp.ui.theme.Blue80
@@ -108,6 +117,7 @@ fun Home(weatherViewModel: WeatherViewModel) {
     var hourlyInfoList = mutableMapOf<String, String>()
     val filteredHourlyData = mutableListOf<Hourly>()
     var weatherDate = ""
+    var weatherCode = ""
 
     weatherRespone.let {data ->
         tempC = data?.data?.current_condition?.get(0)?.temp_C ?: "Loading..."
@@ -119,6 +129,7 @@ fun Home(weatherViewModel: WeatherViewModel) {
         humi = data?.data?.current_condition?.get(0)?.humidity ?: "Loading..."
         windSpeed = data?.data?.current_condition?.get(0)?.windspeedKmph ?: "Loading..."
         weatherDate = data?.data?.weather?.get(0)?.date.toString()
+        weatherCode = data?.data?.current_condition?.get(0)?.weatherCode ?: "0"
 
         val weatherDataList = data?.data?.weather
         val now = LocalDateTime.now()
@@ -188,7 +199,7 @@ fun Home(weatherViewModel: WeatherViewModel) {
                     desc = desc,
                     maxtemp = maxtemp,
                     mintemp = mintemp,
-                    iconWeather = icon,
+                    weatherCode = weatherCode,
                 )
                 Spacer(modifier = Modifier.height(30.dp))
             }
@@ -260,7 +271,8 @@ fun Header(onNotificationClick: () -> Unit) {
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Cloud Icon",
                 tint = Color.White,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier
+                    .size(24.dp)
                     .clickable {
                         // Khi nhấn vào nút thông báo, gọi hàm onNotificationClick để cập nhật giá trị isRainy
                         onNotificationClick()
@@ -271,15 +283,19 @@ fun Header(onNotificationClick: () -> Unit) {
 }
 
 @Composable
-fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,iconWeather: String) {
+fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,weatherCode: String) {
     val regularFont = FontFamily(
         Font(R.font.sfprodisplay_regular),
     )
+
+    val context = LocalContext.current
+    val isDaytime = isDaytime()
+    val imageResource = getDayNightImageResource(isDaytime, weatherCode)
+    val bitmap = getBitmapFromResource(context, imageResource)
     Image(
-        painter = rememberAsyncImagePainter(iconWeather),
-        contentDescription = "Description of the image",
-        contentScale = ContentScale.Crop,
-        modifier = Modifier.size(250.dp, 180.dp)
+        bitmap = bitmap.asImageBitmap(),
+        contentDescription = null,
+        modifier = Modifier.size(250.dp,150.dp),
     )
 
     Column(
@@ -330,9 +346,67 @@ fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,icon
     }
 }
 
+fun getBitmapFromResource(context: Context, resId: Int): Bitmap {
+    val options = BitmapFactory.Options().apply {
+        inJustDecodeBounds = true
+    }
+    BitmapFactory.decodeResource(context.resources, resId, options)
+
+    options.inSampleSize = calculateInSampleSize(options, 250, 180)
+    options.inJustDecodeBounds = false
+    return BitmapFactory.decodeResource(context.resources, resId, options)
+}
+
+fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+    val (height: Int, width: Int) = options.run { outHeight to outWidth }
+    var inSampleSize = 1
+
+    if (height > reqHeight || width > reqWidth) {
+        val halfHeight: Int = height / 2
+        val halfWidth: Int = width / 2
+
+        while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+            inSampleSize *= 2
+        }
+    }
+    return inSampleSize
+}
+
+
+fun isDaytime(): Boolean {
+    val currentHour = LocalDateTime.now().hour
+    return currentHour in 6..18
+}
+
+fun getDayNightImageResource(isDaytime: Boolean, weatherCode: String): Int {
+    return if (isDaytime) {
+        when (weatherCode) {
+            "113" -> R.drawable.daysun
+            "116", "119" -> R.drawable.dayclouds
+            "176", "263" ,"266" ,"281" ,"284" ,"293" ,"296" ,"299" ,"302" ,"305" ,"308" ,"317" ,"311" ,"320" ,"350" ,"353" ,"356" ,"359" ,"362" ,"365" ,"374" ,"377" ,"386" ,"389" -> R.drawable.dayrain
+            "179" ,"182" ,"185" ,"227" ,"230" ,"314" ,"323" ,"326" ,"329" ,"332" ,"338" ,"368" ,"371" ,"392" ,"395" -> R.drawable.daysnow
+            "200" -> R.drawable.daystorm
+
+            else -> 0
+        }
+    } else {
+        when (weatherCode) {
+            "113" -> R.drawable.nightmoon
+            "116", "119" -> R.drawable.nightclouds
+            "176", "263" ,"266" ,"281" ,"284" ,"293" ,"296" ,"299" ,"302" ,"305" ,"308" ,"317" ,"311" ,"320" ,"350" ,"353" ,"356" ,"359" ,"362" ,"365" ,"374" ,"377" ,"386" ,"389" -> R.drawable.nightrain
+            "179" ,"182" ,"185" ,"227" ,"230" ,"314" ,"323" ,"326" ,"329" ,"332" ,"338" ,"368" ,"371" ,"392" ,"395" -> R.drawable.nightsnow
+            "200" -> R.drawable.nightsnow
+            else -> 0
+        }
+    }
+}
+
+
+
+
 @Composable
 fun SpecificInfo (mainColor: Color) {
-    val nounRainPainter: Painter = painterResource(id = R.drawable.nounrain)
+    val nounRainPainter: Painter = painterResource(id = R.drawable.rain)
     val nounHumidityPainter: Painter = painterResource(id = R.drawable.nounhumidity)
     val nounWindPainter: Painter = painterResource(id = R.drawable.nounwind)
     Box(
