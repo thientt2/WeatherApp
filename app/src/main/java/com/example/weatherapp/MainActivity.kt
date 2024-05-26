@@ -96,8 +96,6 @@ class MainActivity : ComponentActivity() {
                         weatherViewModel.fetchWeather(location!!.latitude, location!!.longitude)
 
                     }
-                    ShowLocation(location!!.latitude,location!!.longitude)
-
                     if (weather != null) {
                         BottomNavigation(weatherViewModel)
                     } else {
@@ -112,11 +110,6 @@ class MainActivity : ComponentActivity() {
                 Text(text = "Permission required to access location.")
             }
         }
-    }
-
-    @Composable
-    fun ShowLocation(lat:Double, lng: Double) {
-        Text(text = "${lat.toString()},${lng.toString()}")
     }
 
     @Composable

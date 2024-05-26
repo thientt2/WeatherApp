@@ -2,13 +2,13 @@ package com.example.weatherapp.ui.advancedscreen
 
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.material.icons.filled.DoubleArrow
 import com.example.weatherapp.ui.theme.Grey40
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,11 +37,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -63,6 +60,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import com.example.weatherapp.ui.theme.WeatherAppTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,12 +70,11 @@ import com.example.weatherapp.ui.theme.Green40
 import coil.compose.rememberAsyncImagePainter
 import com.example.weatherapp.ui.theme.Grey80
 import com.example.weatherapp.viewmodal.AdvancedViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.weatherapp.modal.NewsItem
 import com.example.weatherapp.ui.theme.LightBlue
 
 @Composable
-fun TrendingNewsHeader() {
+fun TrendingNewsHeader(onViewAllClicked: () -> Unit) {
     Row(
         modifier = Modifier
             .padding(top = 24.dp, start = 24.dp, end = 24.dp),
@@ -89,13 +87,14 @@ fun TrendingNewsHeader() {
             color = Grey80,
         )
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.weight(10f))
 
         Text(
             text = "View All",
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             color = Green40,
+            modifier = Modifier.clickable { onViewAllClicked() }
         )
 
         Spacer(modifier = Modifier.width(10.dp))
@@ -104,7 +103,8 @@ fun TrendingNewsHeader() {
             imageVector = Icons.Default.DoubleArrow,
             contentDescription = "View All",
             tint = Green40,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(24.dp).clickable { onViewAllClicked() }
+
         )
     }
 }
@@ -145,7 +145,10 @@ fun CategoryItem(
             .padding(start = 8.dp, end = 2.dp, top = 8.dp, bottom = 8.dp)
             .then(borderModifier)
             .background(color = backgroundColor, shape = RoundedCornerShape(20.dp))
-            .clickable { onClick(category) }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick(category) }
             .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
         style = MaterialTheme.typography.body1.copy(
             fontSize = 18.sp,
@@ -254,24 +257,6 @@ fun WorldNewsHeader() {
             fontSize = 30.sp,
             color = Grey80,
         )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Text(
-            text = "View All",
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-            color = Green40,
-        )
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Icon(
-            imageVector = Icons.Default.DoubleArrow,
-            contentDescription = "View All",
-            tint = Green40,
-            modifier = Modifier.size(24.dp)
-        )
     }
 }
 
@@ -310,7 +295,6 @@ fun WorldNewsItemBox(newsItem: NewsItem, onItemClick: (NewsItem) -> Unit) {
     Row(
         modifier = Modifier
             .padding(top = 8.dp, bottom = 24.dp, start = 24.dp, end = 24.dp)
-            .fillMaxWidth()
             .height(200.dp)
             .shadow(
                 elevation = 7.dp,  // Adjust this value to increase/decrease shadow size
@@ -326,8 +310,7 @@ fun WorldNewsItemBox(newsItem: NewsItem, onItemClick: (NewsItem) -> Unit) {
             modifier = Modifier
                 .padding(20.dp)
                 .height(160.dp)
-                .width(180.dp)
-                .fillMaxWidth()
+                .weight(1.5f)
                 .clip(RoundedCornerShape(10.dp))
         ) {
             Image(
@@ -341,32 +324,15 @@ fun WorldNewsItemBox(newsItem: NewsItem, onItemClick: (NewsItem) -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            modifier = Modifier.padding(end = 30.dp),
+            modifier = Modifier
+                .padding(end = 30.dp)
+                .weight(1.2f),
             text = newsItem.title,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             lineHeight = 30.sp,
             maxLines = 5,
             overflow = TextOverflow.Ellipsis
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
-            text = newsItem.link,
-            fontSize = 25.sp,
-            color = Green40,
-            fontWeight = FontWeight.W600,
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp),
-            text = newsItem.pubDate,
-            fontSize = 14.sp,
-            color = Color.Gray
         )
     }
 }
@@ -386,15 +352,20 @@ fun NewsDetail(newsItem: NewsItem, onBackClicked: () -> Unit) {
                                 fontSize = 30.sp,
                                 color = Grey80,
                             ),
-                            modifier = Modifier.padding(top = 24.dp)
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { onBackClicked() }) {
+                    IconButton(
+                        onClick = { onBackClicked() },
+                        modifier = Modifier
+                            .padding(start = 24.dp, bottom = 2.dp)
+                            .size(24.dp)
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) {}
+                    ) {
                         Icon(
-                            modifier = Modifier
-                                .padding(top = 24.dp, start = 24.dp)
-                                .size(24.dp),
                             imageVector = Icons.Default.ArrowBackIosNew,
                             contentDescription = "View All",
                             tint = Grey80,
@@ -411,20 +382,23 @@ fun NewsDetail(newsItem: NewsItem, onBackClicked: () -> Unit) {
                                 type = "text/plain"
                             }
                             context.startActivity(Intent.createChooser(shareIntent, "Share via"))
-                        }
+                        },
+                        modifier = Modifier
+                            .padding(end = 24.dp)
+                            .size(24.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Default.Share,
                             contentDescription = "Share",
                             tint = Grey80,
-                            modifier = Modifier
-                                .padding(top = 24.dp, end = 24.dp)
-                                .size(24.dp)
                         )
                     }
                 },
                 backgroundColor = Grey40, // Sử dụng màu của surface cho top bar
-                elevation = 0.dp // Bỏ phần border của top bar
+                elevation = 0.dp, // Bỏ phần border của top bar
+                modifier = Modifier
+                    .fillMaxWidth() // Ensure it takes the full width
+                    .padding(top = 16.dp, bottom = 8.dp)
             )
         },
         backgroundColor = Grey40,
@@ -432,7 +406,7 @@ fun NewsDetail(newsItem: NewsItem, onBackClicked: () -> Unit) {
             LazyColumn(
                 modifier = Modifier
                     .padding(innerPadding)
-                    .padding(start = 24.dp, end = 24.dp, top = 24.dp)
+                    .padding(start = 24.dp, end = 24.dp)
             ) {
                 item {
                     Box(
@@ -512,6 +486,57 @@ fun NewsDetail(newsItem: NewsItem, onBackClicked: () -> Unit) {
     )
 }
 
+@Composable
+fun TrendingNewsListAll(newsItems: List<NewsItem>, onBackClicked: () -> Unit, onItemClick: (NewsItem) -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Back",
+                        style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 30.sp,
+                            color = Grey80,
+                        ),
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = { onBackClicked() },
+                        modifier = Modifier
+                            .padding(start = 24.dp, bottom = 2.dp)
+                            .size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBackIosNew,
+                            contentDescription = "Back",
+                            tint = Grey80,
+                        )
+                    }
+                },
+                backgroundColor = Grey40,
+                elevation = 0.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, bottom = 8.dp)
+            )
+        },
+        backgroundColor = Grey40,
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(start = 4.dp, end = 4.dp)
+            ) {
+                items(newsItems) { newsItem ->
+                    WorldNewsItemBox(newsItem, onItemClick)
+                }
+            }
+        }
+    )
+}
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
@@ -525,6 +550,7 @@ fun PreviewAdvanced() {
 fun Advanced(viewModel: AdvancedViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     var selectedCategory by remember { mutableStateOf("top") }
     val (selectedNewsItem, setSelectedNewsItem) = remember { mutableStateOf<NewsItem?>(null) }
+    val (viewAll, setViewAll) = remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedCategory) {
         viewModel.fetchNewsByCategory(selectedCategory)
@@ -539,55 +565,63 @@ fun Advanced(viewModel: AdvancedViewModel = androidx.lifecycle.viewmodel.compose
 
     val newsItem by viewModel.newsItems.collectAsState()
 
-
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item {
-            Box(
-                modifier = Modifier
-                    .background(Grey40)
-                    .fillMaxSize()
-            ) {
-                Column {
-                    var isLoading by remember { mutableStateOf(true) }
-                    TrendingNewsHeader()
-                    CategoryList(selectedCategory) {category ->
-                        selectedCategory = category
-                    }
-                    if(isLoading && newsItem.isEmpty()){
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .size(50.dp)
-                                .align(Alignment.CenterHorizontally),
-                            color = Green40,
-                            strokeWidth = 4.dp
-                        )
-                    }else {
-                        isLoading = false
-                        TrendingNewsList(newsItem) { newsItem ->
-                            setSelectedNewsItem(newsItem)
+    if (viewAll) {
+        TrendingNewsListAll(
+            newsItems = newsItem,
+            onBackClicked = { setViewAll(false) },
+            onItemClick = { newsItem -> setSelectedNewsItem(newsItem) }
+        )
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .background(Grey40)
+                        .fillMaxSize()
+                ) {
+                    Column {
+                        var isLoading by remember { mutableStateOf(true) }
+                        TrendingNewsHeader { setViewAll(true) }
+                        CategoryList(selectedCategory) { category ->
+                            selectedCategory = category
+                        }
+                        if (isLoading && newsItem.isEmpty()) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                color = Green40,
+                                strokeWidth = 4.dp
+                            )
+                        } else {
+                            isLoading = false
+                            TrendingNewsList(newsItem) { newsItem ->
+                                setSelectedNewsItem(newsItem)
+                            }
                         }
                     }
                 }
             }
-        }
-        item {
-            Box(
-                modifier = Modifier
-                    .background(Grey40)
-                    .fillMaxSize()
-            ) {
-                LaunchedEffect(Unit) {
-                    viewModel.fetchNewsWorld()
-                }
+            item {
+                Box(
+                    modifier = Modifier
+                        .background(Grey40)
+                        .fillMaxSize()
+                ) {
+                    LaunchedEffect(Unit) {
+                        viewModel.fetchNewsWorld()
+                    }
 
-                val newsWorldItem by viewModel.newsWorldItems.collectAsState()
-                WorldNewsHeader()
-                WorldNewsList(newsWorldItem) { newsItem ->
-                    setSelectedNewsItem(newsItem)
+                    val newsWorldItem by viewModel.newsWorldItems.collectAsState()
+                    WorldNewsHeader()
+                    WorldNewsList(newsWorldItem) { newsItem ->
+                        setSelectedNewsItem(newsItem)
+                    }
                 }
             }
         }
     }
+
 
     selectedNewsItem?.let { newsItem ->
         NewsDetail(newsItem) {

@@ -134,6 +134,9 @@ fun Home(weatherViewModel: WeatherViewModel) {
         val weatherDataList = data?.data?.weather
         val now = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
+
+
         if (weatherDataList != null) {
             for(weatherData in weatherDataList){
                 val date = weatherData.date
@@ -190,7 +193,7 @@ fun Home(weatherViewModel: WeatherViewModel) {
             modifier = Modifier
                 .matchParentSize()
                 .align(Alignment.Center)
-                .padding(top = 60.dp),
+                .padding(top = 90.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             item {
@@ -204,7 +207,12 @@ fun Home(weatherViewModel: WeatherViewModel) {
                 Spacer(modifier = Modifier.height(30.dp))
             }
             item {
-                SpecificInfo(mainColor)
+                SpecificInfo(
+                    mainColor,
+                    precipitation = precip,
+                    humidity = humi,
+                    windSpeed = windSpeed,
+                )
                 Spacer(modifier = Modifier.height(30.dp))
             }
             item {
@@ -405,7 +413,7 @@ fun getDayNightImageResource(isDaytime: Boolean, weatherCode: String): Int {
 
 
 @Composable
-fun SpecificInfo (mainColor: Color) {
+fun SpecificInfo (mainColor: Color, precipitation: String, humidity: String, windSpeed: String) {
     val nounRainPainter: Painter = painterResource(id = R.drawable.rain)
     val nounHumidityPainter: Painter = painterResource(id = R.drawable.nounhumidity)
     val nounWindPainter: Painter = painterResource(id = R.drawable.nounwind)
@@ -434,7 +442,7 @@ fun SpecificInfo (mainColor: Color) {
 
                 Text(
                     modifier = Modifier.padding(start = 5.dp),
-                    text = "6%",
+                    text = "${precipitation}%",
                     fontSize = 14.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -457,7 +465,7 @@ fun SpecificInfo (mainColor: Color) {
 
                 Text(
                     modifier = Modifier.padding(start = 5.dp),
-                    text = "90%",
+                    text = "${humidity}%",
                     fontSize = 14.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -480,7 +488,7 @@ fun SpecificInfo (mainColor: Color) {
 
                 Text(
                     modifier = Modifier.padding(start = 5.dp),
-                    text = "19 km/h",
+                    text = "$windSpeed km/h",
                     fontSize = 14.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
