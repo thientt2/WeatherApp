@@ -16,7 +16,9 @@ class WeatherViewModel : ViewModel(){
             try {
                 val response = RetrofitInstance.apiWeather.getWeather("${lat},${lng}")
                 _weather.value = response
+                println("success1: ${response}")
             } catch (e: Exception) {
+                println("fail----------------------------------")
                 e.printStackTrace()
             }
         }

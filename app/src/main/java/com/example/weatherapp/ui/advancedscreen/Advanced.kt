@@ -103,7 +103,9 @@ fun TrendingNewsHeader(onViewAllClicked: () -> Unit) {
             imageVector = Icons.Default.DoubleArrow,
             contentDescription = "View All",
             tint = Green40,
-            modifier = Modifier.size(24.dp).clickable { onViewAllClicked() }
+            modifier = Modifier
+                .size(24.dp)
+                .clickable { onViewAllClicked() }
 
         )
     }
@@ -552,8 +554,8 @@ fun Advanced(viewModel: AdvancedViewModel = androidx.lifecycle.viewmodel.compose
     val (selectedNewsItem, setSelectedNewsItem) = remember { mutableStateOf<NewsItem?>(null) }
     val (viewAll, setViewAll) = remember { mutableStateOf(false) }
 
-    LaunchedEffect(selectedCategory) {
-        viewModel.fetchNewsByCategory(selectedCategory)
+    LaunchedEffect(Unit) {
+        viewModel.fetchAllNews()
     }
 
     DisposableEffect(Unit) {
@@ -562,14 +564,19 @@ fun Advanced(viewModel: AdvancedViewModel = androidx.lifecycle.viewmodel.compose
             viewModel.cancelJob()
         }
     }
+    
+    LaunchedEffect(selectedCategory) {
+        viewModel.filterNewsByCategory(selectedCategory)
+    }
 
     val newsItem by viewModel.newsItems.collectAsState()
+    val allNews by viewModel.allItems.collectAsState()
 
     if (viewAll) {
         TrendingNewsListAll(
-            newsItems = newsItem,
+            newsItems = allNews,
             onBackClicked = { setViewAll(false) },
-            onItemClick = { newsItem -> setSelectedNewsItem(newsItem) }
+            onItemClick = { newItem -> setSelectedNewsItem(newItem) }
         )
     } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {

@@ -23,8 +23,11 @@ class LocationViewModel : ViewModel() {
                 if (locationResult != null) {
                     _location.value = LocationData(locationResult.latitude, locationResult.longitude)
                 }
+                println("success: ${_location.value}")
             } catch (e: SecurityException) {
                 // Handle exception
+                println("failed:----------------------------------------")
+
             }
         }
     }
