@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,6 +67,7 @@ import com.example.weatherapp.ui.theme.WeatherAppTheme
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.DecodeUtils.calculateInSampleSize
@@ -261,7 +263,7 @@ fun Home(weatherViewModel: WeatherViewModel) {
 
             item {
                 SunriseSunsetSlider(mainColor, sunrise = sunRise, sunset = sunSet)
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
@@ -533,9 +535,7 @@ fun SpecificInfo (mainColor: Color, precipitation: String, humidity: String, win
 fun TodayInfo(hourlyInfoList: MutableList<Triple<String, String, String>> ,weatherDate: String,mainColor: Color, secondaryColor: Color) {
     val currentHour = SimpleDateFormat("HH", Locale.getDefault()).format(Date()).toInt()
 
-
     val lazyListState = rememberLazyListState()
-
 
     Box(
         modifier = Modifier.padding(start = 32.dp, end = 32.dp)
@@ -569,7 +569,7 @@ fun TodayInfo(hourlyInfoList: MutableList<Triple<String, String, String>> ,weath
 
             LazyRow(
                 state = lazyListState,
-                modifier = Modifier.padding(start = 14.dp, end = 14.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(hourlyInfoList.size) { index ->
@@ -586,8 +586,13 @@ fun TodayInfo(hourlyInfoList: MutableList<Triple<String, String, String>> ,weath
                     Box(
                         modifier = Modifier
                             .padding(top = 20.dp, bottom = 20.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .border(
+                                width = if (isCurrentHour) 1.dp else 0.dp, // Width of the border if current hour
+                                color = if (isCurrentHour) Color.White else Color.Transparent, // Border color if current hour
+                                shape = RoundedCornerShape(10.dp)
+                            )
                             .background(if (isCurrentHour) secondaryColor else mainColor)
-
                     ) {
                         Column(
                             modifier = Modifier
@@ -608,11 +613,7 @@ fun TodayInfo(hourlyInfoList: MutableList<Triple<String, String, String>> ,weath
                                 contentDescription = "Weather icon",
                                 modifier = Modifier.size(43.dp),
                                 tint = Color.White,
-
-
-                                )
-
-
+                            )
 
                             Spacer(modifier = Modifier.weight(1f))
 
@@ -766,7 +767,7 @@ fun NextForecastItem (forecast: Forecast) {
         Text(
             text = forecast.lowTemp,
             fontSize = 18.sp,
-            color = Grey60,
+            color = Color.White.copy(alpha = 0.5f),
             fontWeight = FontWeight.Bold,
         )
     }
@@ -795,7 +796,9 @@ fun InfoBox(icon: ImageVector, description: String, value: String, unit: String,
             Text(
                 text = description,
                 fontSize = 15.sp,
-                color = Grey60,
+                color = Color.White.copy(alpha = 0.5f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
@@ -816,9 +819,11 @@ fun InfoBox(icon: ImageVector, description: String, value: String, unit: String,
 
                 Text(
                     text = unit,
-                    fontSize = 10.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
@@ -932,7 +937,7 @@ fun SunriseSunsetSlider(mainColor: Color, sunrise: String, sunset: String) {
                     Text(
                         text = "Sunrise",
                         fontSize = 20.sp,
-                        color = Grey60,
+                        color = Color.White.copy(alpha = 0.5f)
                     )
                 }
 
@@ -955,7 +960,7 @@ fun SunriseSunsetSlider(mainColor: Color, sunrise: String, sunset: String) {
                     Text(
                         text = "Sunset",
                         fontSize = 20.sp,
-                        color = Grey60,
+                        color = Color.White.copy(alpha = 0.5f)
                     )
                 }
             }

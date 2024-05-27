@@ -29,7 +29,6 @@ val Sky60 = Color(0xFF319CCC)
 val Sky80 = Color(0xFF268BB9)
 
 val Blue20 = Color(0xFF1A73E8)
-val Blue40 = Color(0xFF91DEFF)
 val Blue60 = Color(0xFF4B337B)
 val Blue80 = Color(0xFF2F226B)
 
