@@ -310,7 +310,7 @@ fun WorldNewsItemBox(newsItem: NewsItem, onItemClick: (NewsItem) -> Unit) {
             modifier = Modifier
                 .padding(20.dp)
                 .height(160.dp)
-                .weight(1.5f)
+                .weight(1.3f)
                 .clip(RoundedCornerShape(10.dp))
         ) {
             Image(

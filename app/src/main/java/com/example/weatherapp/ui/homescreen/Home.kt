@@ -3,16 +3,12 @@ package com.example.weatherapp.ui.homescreen
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -27,6 +23,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
+import androidx.compose.material.Slider
+import androidx.compose.material.SliderDefaults
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -72,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.DecodeUtils.calculateInSampleSize
 import com.example.weatherapp.modal.weather.Hourly
+import com.example.weatherapp.modal.weather.Weather
 import com.example.weatherapp.ui.theme.Blue60
 import com.example.weatherapp.ui.theme.Blue80
 import com.example.weatherapp.ui.theme.Sky80
@@ -83,10 +82,13 @@ import com.example.weatherapp.ui.theme.Grey80
 import com.example.weatherapp.ui.theme.LightSky
 import com.example.weatherapp.ui.theme.NavySky
 import com.example.weatherapp.viewmodal.WeatherViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 
@@ -118,13 +120,16 @@ fun Home(weatherViewModel: WeatherViewModel) {
     var precip = ""
     var humi = ""
     var windSpeed = ""
-    var hourlyInfoList = mutableMapOf<String, String>()
+    val hourlyInfoList = mutableListOf<Triple<String, String, String>>()
     val filteredHourlyData = mutableListOf<Hourly>()
+    val filteredHourly7Day = mutableListOf<Weather>()
     var weatherDate = ""
     var weatherCode = ""
     var uvIndex = ""
     var visibility = ""
     var cloudCover = ""
+    var sunSet = ""
+    var sunRise = ""
 
     weatherRespone.let {data ->
         tempC = data?.data?.current_condition?.get(0)?.temp_C ?: "Loading..."
@@ -141,29 +146,38 @@ fun Home(weatherViewModel: WeatherViewModel) {
         visibility = data?.data?.current_condition?.get(0)?.visibilityMiles ?: "Loading..."
         cloudCover = data?.data?.current_condition?.get(0)?.cloudcover ?: "Loading..."
 
+        sunRise = data?.data?.weather?.get(0)?.astronomy?.get(0)?.sunrise ?: "Loading..."
+        sunSet = data?.data?.weather?.get(0)?.astronomy?.get(0)?.sunset ?: "Loading..."
+
         val weatherDataList = data?.data?.weather
         val now = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+        val formatterHour = DateTimeFormatter.ofPattern("HH:mm")
+        val timeNow = now.format(formatterHour)
+        hourlyInfoList.add(Triple(timeNow,weatherCode,tempC))
 
         if (weatherDataList != null) {
-            for(weatherData in weatherDataList){
+            for (weatherData in weatherDataList) {
                 val date = weatherData.date
-
-                for(hourly in weatherData.hourly){
+                // Lọc thông tin thời tiết theo giờ cho 24 giờ tiếp theo
+                for (hourly in weatherData.hourly) {
                     val time = hourly.time.padStart(4, '0') // Đảm bảo thời gian có định dạng 4 chữ số
+                    val timeFormatted = "${time.substring(0, 2)}:${time.substring(2, 4)}"
                     val dateTimeStr = "$date ${time.substring(0, 2)}:${time.substring(2, 4)}"
                     val dateTime = LocalDateTime.parse(dateTimeStr, formatter)
 
-                    if (dateTime.isAfter(now.minusHours(1)) && dateTime.isBefore(now.plusHours(24))) {
+                    if (dateTime.isAfter(now) && dateTime.isBefore(now.plusHours(23))) {
+                        val weatherCode = hourly.weatherCode ?: "0"
+                        val tempC = hourly.tempC ?: "Loading..."
                         filteredHourlyData.add(hourly)
+                        hourlyInfoList.add(Triple(timeFormatted, weatherCode, tempC))
                     }
                 }
-
             }
         }
 
-    }
 
+    }
 
     val gradientBrush = if (isRainy) {
         Brush.linearGradient(
@@ -224,7 +238,7 @@ fun Home(weatherViewModel: WeatherViewModel) {
                 Spacer(modifier = Modifier.height(30.dp))
             }
             item {
-                TodayInfo(filteredHourlyData,weatherDate, mainColor, secondaryColor)
+                TodayInfo(hourlyInfoList,weatherDate, mainColor, secondaryColor)
                 Spacer(modifier = Modifier.height(30.dp))
             }
             item {
@@ -242,6 +256,11 @@ fun Home(weatherViewModel: WeatherViewModel) {
             }
             item {
                 MoreInfo(uvIndex, visibility, cloudCover, mainColor)
+                Spacer(modifier = Modifier.height(30.dp))
+            }
+
+            item {
+                SunriseSunsetSlider(mainColor, sunrise = sunRise, sunset = sunSet)
                 Spacer(modifier = Modifier.height(30.dp))
             }
         }
@@ -511,21 +530,12 @@ fun SpecificInfo (mainColor: Color, precipitation: String, humidity: String, win
 }
 
 @Composable
-fun TodayInfo(filteredHourlyData: MutableList<Hourly>,weatherDate: String,mainColor: Color, secondaryColor: Color) {
+fun TodayInfo(hourlyInfoList: MutableList<Triple<String, String, String>> ,weatherDate: String,mainColor: Color, secondaryColor: Color) {
     val currentHour = SimpleDateFormat("HH", Locale.getDefault()).format(Date()).toInt()
 
-    val lazyListState = rememberLazyListState()
-//    val currentIndex = filteredHourlyData.indexOfFirst {
-//        it.hour.split(":")[0].toInt() == currentHour
-//    }
 
-//    LaunchedEffect(currentIndex) {
-//        if (currentIndex != -1) {
-//            launch {
-//                lazyListState.scrollToItem(currentIndex)
-//            }
-//        }
-//    }
+    val lazyListState = rememberLazyListState()
+
 
     Box(
         modifier = Modifier.padding(start = 32.dp, end = 32.dp)
@@ -533,7 +543,7 @@ fun TodayInfo(filteredHourlyData: MutableList<Hourly>,weatherDate: String,mainCo
         Column(
             modifier = Modifier
                 .height(217.dp)
-                .clip(RoundedCornerShape(15.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .background(mainColor), // Blue80
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -562,10 +572,16 @@ fun TodayInfo(filteredHourlyData: MutableList<Hourly>,weatherDate: String,mainCo
                 modifier = Modifier.padding(start = 14.dp, end = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(filteredHourlyData.size) { index ->
-                    val info = filteredHourlyData[index]
-                    val hourInt = info.time.split(":")[0].toInt()
+                items(hourlyInfoList.size) { index ->
+                    val info = hourlyInfoList[index]
+                    val hourInt = getHourFromTimeString(info.first)
                     val isCurrentHour = hourInt == currentHour
+
+
+                    val isDaytime = isDaytime(hourInt)
+                    val weatherCodeIcon = info.second ?: ""
+                    val iconResource = getDayNightIconResource(isDaytime, weatherCodeIcon)
+
 
                     Box(
                         modifier = Modifier
@@ -579,23 +595,29 @@ fun TodayInfo(filteredHourlyData: MutableList<Hourly>,weatherDate: String,mainCo
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = info.tempC + "°C",
+                                text = info.third + "°C",
                                 fontSize = 18.sp,
                                 color = Color.White,
                             )
 
                             Spacer(modifier = Modifier.weight(1f))
 
+
                             Icon(
-                                painter = rememberAsyncImagePainter(info.weatherIconUrl.get(0).value),
+                                painter = painterResource(id = iconResource),
                                 contentDescription = "Weather icon",
-                                modifier = Modifier.size(43.dp)
-                            )
+                                modifier = Modifier.size(43.dp),
+                                tint = Color.White,
+
+
+                                )
+
+
 
                             Spacer(modifier = Modifier.weight(1f))
 
                             Text(
-                                text = if (isCurrentHour) "Now" else convertToTimeFormat(info.time),
+                                text = if (index == 0) "Now" else convertToTimeFormat(info.first),
                                 fontSize = 18.sp,
                                 color = Color.White,
                             )
@@ -607,16 +629,66 @@ fun TodayInfo(filteredHourlyData: MutableList<Hourly>,weatherDate: String,mainCo
             }
         }
     }
-
+}
+fun isDaytime(hour: Int): Boolean {
+    return hour in 6..17
+}
+fun getHourFromTimeString(time: String): Int {
+    // Giả sử đầu vào là "HH:mm", chúng ta lấy phần giờ "HH" và chuyển đổi nó thành số nguyên
+    return time.substring(0, 2).toInt()
 }
 
 fun convertToTimeFormat(time: String): String {
-    val number = time.toInt()
-    val hour = number / 100
-    val minute = number % 100
-    return "$hour:${String.format("%02d", minute)}"
+    // Giả sử đầu vào là "HHmm", chúng ta chuyển đổi nó thành "HH:mm"
+    return if (time.length == 4) {
+        "${time.substring(0, 2)}:${time.substring(2, 4)}"
+    } else {
+        time // Trả về nguyên bản nếu không đúng định dạng
+    }
 }
 
+
+fun getDayNightIconResource(isDaytime: Boolean, weatherCode: String): Int {
+    return if (isDaytime) {
+        when (weatherCode) {
+            "227" -> R.drawable.blowingsnow
+            "179" ,"323" ,"326" ,"329" ,"332" ,"335" ,"338" ,"350" ,"392" -> R.drawable.snow
+            "182" ,"311" ,"314" ,"368" ,"371" ,"374" ,"377" -> R.drawable.sleet
+            "230" ,"395" -> R.drawable.blizzard
+            "386" ,"389" -> R.drawable.rainandthunderstorm
+            "200" -> R.drawable.severthunderstorm
+            "185" ,"263" ,"266" ,"281" ,"284" -> R.drawable.drizzle
+            "176" ,"296" ,"299" ,"302" ,"317" ,"320" ,"356" ,"359" -> R.drawable.rain
+            "293", "353","362" ,"365" -> R.drawable.scatteradshowers
+            "305" ,"308" -> R.drawable.heavyrain
+            "143", "248", "260" -> R.drawable.fog
+            "116" -> R.drawable.partlycloudy
+            "119" ,"122" -> R.drawable.cloudy
+            "113" -> R.drawable.sunny
+
+
+            else -> 0
+        }
+    } else {
+        when (weatherCode) {
+            "227" -> R.drawable.blowingsnow
+            "179" ,"323" ,"326" ,"329" ,"332" ,"335" ,"338" ,"350" ,"392" -> R.drawable.snow
+            "182" ,"311" ,"314" ,"368" ,"371" ,"374" ,"377" -> R.drawable.sleet
+            "230" ,"395" -> R.drawable.blizzard
+            "386" ,"389" -> R.drawable.rainandthunderstorm
+            "200" -> R.drawable.severthunderstorm
+            "185" ,"263" ,"266" ,"281" ,"284" -> R.drawable.drizzle
+            "176" ,"296" ,"299" ,"302" ,"317" ,"320" ,"356" ,"359" -> R.drawable.rainnight
+            "293", "353","362" ,"365" -> R.drawable.scatteradshowersnight
+            "305" ,"308" -> R.drawable.heavyrain
+            "143", "248", "260" -> R.drawable.fog
+            "116" -> R.drawable.partlycloudynight
+            "119" ,"122" -> R.drawable.partlyclearnight
+            "113" -> R.drawable.clearnight
+            else -> 0
+        }
+    }
+}
 @Composable
 fun NextForecast (forecastList: List<Forecast>, mainColor: Color) {
     Box(
@@ -701,6 +773,60 @@ fun NextForecastItem (forecast: Forecast) {
 }
 
 @Composable
+fun InfoBox(icon: ImageVector, description: String, value: String, unit: String, mainColor: Color, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(15.dp))
+            .background(color = mainColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(top = 15.dp, bottom = 15.dp, start = 15.dp, end = 20.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = "$description Icon",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = description,
+                fontSize = 15.sp,
+                color = Grey60,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier.fillMaxHeight(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = value,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text(
+                    text = unit,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun MoreInfo(uvIndex: String, visibility: String, cloudCover: String, mainColor: Color) {
     val uvIndexInt = uvIndex.toIntOrNull() ?: 0
     val uvDescription = when (uvIndexInt) {
@@ -719,168 +845,157 @@ fun MoreInfo(uvIndex: String, visibility: String, cloudCover: String, mainColor:
             modifier = Modifier
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(15.dp))
-                    .background(color = mainColor)
+            InfoBox(
+                icon = Icons.Default.WbSunny,
+                description = "UV",
+                value = uvIndex,
+                unit = uvDescription,
+                mainColor = mainColor,
+                modifier = Modifier.weight(1f)
+            )
+
+            InfoBox(
+                icon = Icons.Default.RemoveRedEye,
+                description = "Visibility",
+                value = visibility,
+                unit = "Miles",
+                mainColor = mainColor,
+                modifier = Modifier.weight(1f)
+            )
+
+            InfoBox(
+                icon = Icons.Default.WbCloudy,
+                description = "Cloud",
+                value = cloudCover,
+                unit = "%",
+                mainColor = mainColor,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun SunriseSunsetSlider(mainColor: Color, sunrise: String, sunset: String) {
+    val currentTime = remember { mutableStateOf(LocalTime.now()) }
+
+    // Update the current time every second
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentTime.value = LocalTime.now().truncatedTo(ChronoUnit.SECONDS)
+            delay(1000)
+        }
+    }
+
+    val sunriseTime: LocalTime = LocalTime.parse(sunrise, DateTimeFormatter.ofPattern("hh:mm a"))
+    val sunsetTime: LocalTime = LocalTime.parse(sunset, DateTimeFormatter.ofPattern("hh:mm a"))
+
+    // Convert time to float for the slider
+    val minTime = sunriseTime.toSecondOfDay().toFloat()
+    val maxTime = sunsetTime.toSecondOfDay().toFloat()
+
+    val currentTimeFloat = currentTime.value.toSecondOfDay().toFloat()
+
+    val sliderPosition = remember { mutableStateOf(currentTimeFloat) }
+
+    // Update the slider position to match the current time
+    LaunchedEffect(currentTime.value) {
+        sliderPosition.value = currentTimeFloat
+    }
+
+    Box(
+        modifier = Modifier
+            .padding(start = 32.dp, end = 32.dp)
+            .clip(RoundedCornerShape(15.dp))
+            .background(color = mainColor),
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(top = 24.dp, start = 20.dp, end = 20.dp)
             ) {
                 Column(
-                    modifier = Modifier
-                        .padding(top = 15.dp, bottom = 15.dp, start = 15.dp, end = 20.dp)
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center,
                 ) {
+                    val imagePainter: Painter = painterResource(id = R.drawable.sunrise)
                     Icon(
-                        imageVector = Icons.Default.WbSunny,
-                        contentDescription = "UV Icon",
+                        painter = imagePainter,
+                        contentDescription = "My Icon",
                         tint = Color.White,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(48.dp) // Điều chỉnh kích thước tùy ý
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    // Thêm Text UV
                     Text(
-                        text = "UV",
+                        text = "Sunrise",
                         fontSize = 20.sp,
                         color = Grey60,
-                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    val imagePainter: Painter = painterResource(id = R.drawable.sunset)
+                    Icon(
+                        painter = imagePainter,
+                        contentDescription = "My Icon",
+                        tint = Color.White,
+                        modifier = Modifier.size(48.dp) // Điều chỉnh kích thước tùy ý
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxHeight(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = uvIndex,
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                        )
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        Text(
-                            text = uvDescription,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.padding(top = 10.dp)
-                        )
-                    }
+                    Text(
+                        text = "Sunset",
+                        fontSize = 20.sp,
+                        color = Grey60,
+                    )
                 }
             }
-
-            Box(
+            Slider(
+                value = sliderPosition.value,
+                onValueChange = { sliderPosition.value = it },
+                valueRange = minTime..maxTime,
+                colors = SliderDefaults.colors(
+                    activeTrackColor = Color.Blue, // Màu của đường slider
+                    thumbColor = Color.Yellow, // Màu của con trỏ trượt
+                    inactiveTrackColor = Color.White // Màu của phần còn lại của Slider
+                ),
                 modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(15.dp))
-                    .background(color = mainColor)
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp),
+            )
+
+            Row(
+                modifier = Modifier.padding(bottom = 24.dp, start = 20.dp, end = 20.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(top = 15.dp, bottom = 15.dp, start = 15.dp, end = 20.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.RemoveRedEye,
-                        contentDescription = "Visibility Icon",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
+                Text(
+                    text = sunrise,
+                    fontSize = 20.sp,
+                    color = Color.White,
+                )
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
-                    // Thêm Text UV
-                    Text(
-                        text = "Visibility",
-                        fontSize = 20.sp,
-                        color = Grey60,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
 
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    // Thêm thông tin UV
-                    Row(
-                        modifier = Modifier.fillMaxHeight(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = visibility,
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                        )
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        Text(
-                            text = "miles",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(15.dp))
-                    .background(color = mainColor)
-            ) {
-                Column(
-                    modifier = Modifier.padding(top = 15.dp, bottom = 15.dp, start = 15.dp, end = 20.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.WbCloudy,
-                        contentDescription = "UV Icon",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    // Thêm Text UV
-                    Text(
-                        text = "Cloud",
-                        fontSize = 20.sp,
-                        color = Grey60,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxHeight(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = cloudCover,
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                        )
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        Text(
-                            text = "%",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                }
+                Text(
+                    text = sunset,
+                    fontSize = 20.sp,
+                    color = Color.White,
+                )
             }
         }
     }
 }
+
+
 
 
 
