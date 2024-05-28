@@ -3,6 +3,7 @@ package com.example.weatherapp.ui.homescreen
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -90,6 +91,7 @@ import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
@@ -132,6 +134,7 @@ fun Home(weatherViewModel: WeatherViewModel) {
     var cloudCover = ""
     var sunSet = ""
     var sunRise = ""
+    val weatherData = weatherRespone?.data?.weather
 
     weatherRespone.let {data ->
         tempC = data?.data?.current_condition?.get(0)?.temp_C ?: "Loading..."
@@ -244,26 +247,33 @@ fun Home(weatherViewModel: WeatherViewModel) {
                 Spacer(modifier = Modifier.height(30.dp))
             }
             item {
-                val sampleForecasts = listOf(
-                    Forecast("Monday", "13°C", "10°C", Icons.Default.WbCloudy),
-                    Forecast("Tuesday", "15°C", "12°C", Icons.Default.WbSunny),
-                    Forecast("Wednesday", "17°C", "14°C", Icons.Default.WbCloudy),
-                    Forecast("Thursday", "18°C", "15°C", Icons.Default.WbSunny),
-                    Forecast("Friday", "20°C", "16°C", Icons.Default.WbCloudy),
-                    Forecast("Saturday", "22°C", "18°C", Icons.Default.WbSunny),
-                    Forecast("Sunday", "21°C", "17°C", Icons.Default.WbCloudy)
-                )
-                NextForecast(forecastList = sampleForecasts, mainColor)
+                if (weatherData != null) {
+                    NextForecast( weatherData = weatherData, mainColor)
+                }
                 Spacer(modifier = Modifier.height(30.dp))
+
             }
             item {
                 MoreInfo(uvIndex, visibility, cloudCover, mainColor)
                 Spacer(modifier = Modifier.height(30.dp))
             }
 
-            item {
-                SunriseSunsetSlider(mainColor, sunrise = sunRise, sunset = sunSet)
-                Spacer(modifier = Modifier.height(40.dp))
+            try {
+                val sunriseTime = LocalTime.parse(sunRise, DateTimeFormatter.ofPattern("HH:mm"))
+                val sunsetTime = LocalTime.parse(sunSet, DateTimeFormatter.ofPattern("HH:mm"))
+
+                val now = LocalTime.now()
+
+                val showSunriseSunsetSlider = now.isAfter(sunriseTime) && now.isBefore(sunsetTime)
+
+                if (showSunriseSunsetSlider) {
+                    item {
+                        SunriseSunsetSlider(mainColor, sunrise = sunRise, sunset = sunSet)
+                        Spacer(modifier = Modifier.height(40.dp))
+                    }
+                }
+            } catch (e: DateTimeParseException) {
+                Log.e("MyApp", "Xảy ra lỗi khi chuyển đổi thời gian: ${e.message}")
             }
         }
     }
@@ -691,7 +701,8 @@ fun getDayNightIconResource(isDaytime: Boolean, weatherCode: String): Int {
     }
 }
 @Composable
-fun NextForecast (forecastList: List<Forecast>, mainColor: Color) {
+fun NextForecast (weatherData: List<Weather>, mainColor: Color) {
+
     Box(
         modifier = Modifier.padding(start = 32.dp, end = 32.dp)
     ) {
@@ -723,22 +734,27 @@ fun NextForecast (forecastList: List<Forecast>, mainColor: Color) {
                     modifier = Modifier.size(20.dp)
                 )
             }
-            forecastList.forEach { forecast ->
-                NextForecastItem(forecast)
+            weatherData.forEach { weather ->
+                NextForecastItem(weather)
             }
         }
     }
 }
 
 @Composable
-fun NextForecastItem (forecast: Forecast) {
+fun NextForecastItem (weather: Weather) {
+    val weatherCode = weather?.hourly?.get(11)?.weatherCode ?: "0"
+    val iconResource = getIconResource(weatherCode)
+    val maxTempC = weather?.maxtempC ?: "0"
+    val minTempC = weather?.mintempC ?: "0"
+
     Row(
         modifier = Modifier.padding(start = 17.dp, end = 17.dp, top = 24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.weight(3f)) {
             Text(
-                text = forecast.day,
+                text = weather.date,
                 fontSize = 18.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -747,7 +763,7 @@ fun NextForecastItem (forecast: Forecast) {
         }
 
         Icon(
-            imageVector = forecast.icon,
+            painter = painterResource(id = iconResource),
             contentDescription = "Description of the icon",
             tint = Color.White,
             modifier = Modifier.size(20.dp)
@@ -756,7 +772,7 @@ fun NextForecastItem (forecast: Forecast) {
         Spacer(modifier = Modifier.weight(1f))
 
         Text(
-            text = forecast.highTemp,
+            text = "${maxTempC}°",
             fontSize = 18.sp,
             color = Color.White,
             fontWeight = FontWeight.Bold,
@@ -765,11 +781,31 @@ fun NextForecastItem (forecast: Forecast) {
         Spacer(modifier = Modifier.width(8.dp))
 
         Text(
-            text = forecast.lowTemp,
+            text = "${minTempC}°",
             fontSize = 18.sp,
             color = Color.White.copy(alpha = 0.5f),
             fontWeight = FontWeight.Bold,
         )
+    }
+}
+
+fun getIconResource(weatherCode: String): Int {
+    return when (weatherCode) {
+        "227" -> R.drawable.blowingsnow
+        "179", "323", "326", "329", "332", "335", "338", "350", "392" -> R.drawable.snow
+        "182", "311", "314", "368", "371", "374", "377" -> R.drawable.sleet
+        "230", "395" -> R.drawable.blizzard
+        "386", "389" -> R.drawable.rainandthunderstorm
+        "200" -> R.drawable.severthunderstorm
+        "185", "263", "266", "281", "284" -> R.drawable.drizzle
+        "176", "296", "299", "302", "317", "320", "356", "359" -> R.drawable.rain
+        "293", "353", "362", "365" -> R.drawable.scatteradshowers
+        "305", "308" -> R.drawable.heavyrain
+        "143", "248", "260" -> R.drawable.fog
+        "116" -> R.drawable.partlycloudy
+        "119", "122" -> R.drawable.cloudy
+        "113" -> R.drawable.sunny
+        else -> 0
     }
 }
 
