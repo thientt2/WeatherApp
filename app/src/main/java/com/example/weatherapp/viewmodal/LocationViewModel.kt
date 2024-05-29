@@ -26,7 +26,7 @@ class LocationViewModel : ViewModel() {
                 println("success: ${_location.value}")
             } catch (e: SecurityException) {
                 // Handle exception
-                println("failed:----------------------------------------")
+                println("failed location:----------------------------------------")
 
             }
         }

@@ -18,7 +18,7 @@ class WeatherViewModel : ViewModel(){
                 _weather.value = response
                 println("success1: ${response}")
             } catch (e: Exception) {
-                println("fail----------------------------------")
+                println("fail weatherapi----------------------------------")
                 e.printStackTrace()
             }
         }
