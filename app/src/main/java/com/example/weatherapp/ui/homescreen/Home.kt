@@ -1,9 +1,9 @@
 package com.example.weatherapp.ui.homescreen
 
+import android.Manifest
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,6 +38,9 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -72,8 +75,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.DecodeUtils.calculateInSampleSize
+
 import com.example.weatherapp.modal.weather.Hourly
 import com.example.weatherapp.modal.weather.Weather
+import com.example.weatherapp.modal.weather.WeatherData
 import com.example.weatherapp.ui.theme.Blue60
 import com.example.weatherapp.ui.theme.Blue80
 import com.example.weatherapp.ui.theme.Sky80
@@ -84,37 +89,78 @@ import com.example.weatherapp.ui.theme.Grey60
 import com.example.weatherapp.ui.theme.Grey80
 import com.example.weatherapp.ui.theme.LightSky
 import com.example.weatherapp.ui.theme.NavySky
+import com.example.weatherapp.viewmodal.LocationViewModel
 import com.example.weatherapp.viewmodal.WeatherViewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 
 
-data class Forecast(
-    val day: String,
-    val highTemp: String,
-    val lowTemp: String,
-    val icon: ImageVector
-)
-
-data class HourlyInfo(
-    val temperature: String,
-    val icon: ImageVector,
-    val hour: String
-)
 
 @Composable
-fun Home(weatherViewModel: WeatherViewModel) {
-    var isRainy by remember { mutableStateOf(true) }
+fun Home(weatherViewModel: WeatherViewModel = androidx.lifecycle.viewmodel.compose.viewModel(), locationViewModel: LocationViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
 
+    LoadModel(weatherViewModel,locationViewModel)
+
+}
+
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationViewModel){
+    val context = LocalContext.current
+    val location by locationViewModel.location.collectAsState()
+    val weather by weatherViewModel.weather.collectAsState()
+
+    var permissionGranted by remember { mutableStateOf(false) }
+    val locationPermissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
+
+    LaunchedEffect(locationPermissionState.status) {
+        if (locationPermissionState.status.isGranted) {
+            permissionGranted = true
+            locationViewModel.fetchLocation(context)
+        } else {
+            locationPermissionState.launchPermissionRequest()
+        }
+    }
+
+    if (permissionGranted) {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            if (location != null) {
+                LaunchedEffect(location) {
+                    weatherViewModel.fetchWeather(location!!.latitude, location!!.longitude)
+
+                }
+                if (weather != null) {
+                    WeatherScreen(weatherViewModel)
+                } else {
+                    LoadingSection()
+                }
+            } else {
+                androidx.compose.material3.Text(text = "Fetching location data...")
+            }
+        }
+    } else {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            androidx.compose.material3.Text(text = "Permission required to access location.")
+        }
+    }
+}
+
+@Composable
+fun WeatherScreen(weatherViewModel: WeatherViewModel){
+    var isRainy by remember { mutableStateOf(true) }
     val weatherRespone by weatherViewModel.weather.collectAsState()
+    val weatherData = weatherRespone?.data?.weather
 
     var tempC = ""
     var desc = ""
@@ -126,7 +172,6 @@ fun Home(weatherViewModel: WeatherViewModel) {
     var windSpeed = ""
     val hourlyInfoList = mutableListOf<Triple<String, String, String>>()
     val filteredHourlyData = mutableListOf<Hourly>()
-    val filteredHourly7Day = mutableListOf<Weather>()
     var weatherDate = ""
     var weatherCode = ""
     var uvIndex = ""
@@ -134,7 +179,6 @@ fun Home(weatherViewModel: WeatherViewModel) {
     var cloudCover = ""
     var sunSet = ""
     var sunRise = ""
-    val weatherData = weatherRespone?.data?.weather
 
     weatherRespone.let {data ->
         tempC = data?.data?.current_condition?.get(0)?.temp_C ?: "Loading..."
@@ -251,33 +295,40 @@ fun Home(weatherViewModel: WeatherViewModel) {
                     NextForecast( weatherData = weatherData, mainColor)
                 }
                 Spacer(modifier = Modifier.height(30.dp))
-
             }
             item {
                 MoreInfo(uvIndex, visibility, cloudCover, mainColor)
                 Spacer(modifier = Modifier.height(30.dp))
             }
 
-            try {
-                val sunriseTime = LocalTime.parse(sunRise, DateTimeFormatter.ofPattern("HH:mm"))
-                val sunsetTime = LocalTime.parse(sunSet, DateTimeFormatter.ofPattern("HH:mm"))
-
-                val now = LocalTime.now()
-
-                val showSunriseSunsetSlider = now.isAfter(sunriseTime) && now.isBefore(sunsetTime)
-
-                if (showSunriseSunsetSlider) {
-                    item {
-                        SunriseSunsetSlider(mainColor, sunrise = sunRise, sunset = sunSet)
-                        Spacer(modifier = Modifier.height(40.dp))
-                    }
-                }
-            } catch (e: DateTimeParseException) {
-                Log.e("MyApp", "Xảy ra lỗi khi chuyển đổi thời gian: ${e.message}")
-            }
+//            val currentTime = LocalTime.now()
+//            val sunriseTime = LocalTime.parse(sunRise, DateTimeFormatter.ofPattern("hh:mm a"))
+//            val sunsetTime = LocalTime.parse(sunSet, DateTimeFormatter.ofPattern("hh:mm a"))
+//
+//            val isDaytime = currentTime.isAfter(sunriseTime) && currentTime.isBefore(sunsetTime)
+//
+//            if (isDaytime) {
+//                item {
+//                    SunriseSunsetSlider(mainColor, sunrise = sunRise, sunset = sunSet)
+//                    Spacer(modifier = Modifier.height(40.dp))
+//                }
+//            }
         }
     }
 }
+
+@Composable
+fun LoadingSection() {
+    return Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CircularProgressIndicator(color = Color.White)
+
+    }
+}
+
 
 @Composable
 fun Header(onNotificationClick: () -> Unit) {
@@ -809,6 +860,8 @@ fun getIconResource(weatherCode: String): Int {
     }
 }
 
+
+
 @Composable
 fun InfoBox(icon: ImageVector, description: String, value: String, unit: String, mainColor: Color, modifier: Modifier = Modifier) {
     Box(
@@ -1035,11 +1088,3 @@ fun SunriseSunsetSlider(mainColor: Color, sunrise: String, sunset: String) {
         }
     }
 }
-
-
-
-
-
-
-
-
