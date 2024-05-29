@@ -1,6 +1,5 @@
 package com.example.weatherapp.ui.homescreen
 
-import android.Manifest
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -38,9 +37,6 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -75,10 +71,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.DecodeUtils.calculateInSampleSize
-
 import com.example.weatherapp.modal.weather.Hourly
 import com.example.weatherapp.modal.weather.Weather
-import com.example.weatherapp.modal.weather.WeatherData
 import com.example.weatherapp.ui.theme.Blue60
 import com.example.weatherapp.ui.theme.Blue80
 import com.example.weatherapp.ui.theme.Sky80
@@ -89,11 +83,7 @@ import com.example.weatherapp.ui.theme.Grey60
 import com.example.weatherapp.ui.theme.Grey80
 import com.example.weatherapp.ui.theme.LightSky
 import com.example.weatherapp.ui.theme.NavySky
-import com.example.weatherapp.viewmodal.LocationViewModel
 import com.example.weatherapp.viewmodal.WeatherViewModel
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -105,62 +95,24 @@ import java.util.Date
 import java.util.Locale
 
 
+data class Forecast(
+    val day: String,
+    val highTemp: String,
+    val lowTemp: String,
+    val icon: ImageVector
+)
+
+data class HourlyInfo(
+    val temperature: String,
+    val icon: ImageVector,
+    val hour: String
+)
 
 @Composable
-fun Home(weatherViewModel: WeatherViewModel = androidx.lifecycle.viewmodel.compose.viewModel(), locationViewModel: LocationViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
-
-    LoadModel(weatherViewModel,locationViewModel)
-
-}
-
-
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationViewModel){
-    val context = LocalContext.current
-    val location by locationViewModel.location.collectAsState()
-    val weather by weatherViewModel.weather.collectAsState()
-
-    var permissionGranted by remember { mutableStateOf(false) }
-    val locationPermissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
-
-    LaunchedEffect(locationPermissionState.status) {
-        if (locationPermissionState.status.isGranted) {
-            permissionGranted = true
-            locationViewModel.fetchLocation(context)
-        } else {
-            locationPermissionState.launchPermissionRequest()
-        }
-    }
-
-    if (permissionGranted) {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            if (location != null) {
-                LaunchedEffect(location) {
-                    weatherViewModel.fetchWeather(location!!.latitude, location!!.longitude)
-
-                }
-                if (weather != null) {
-                    WeatherScreen(weatherViewModel)
-                } else {
-                    LoadingSection()
-                }
-            } else {
-                androidx.compose.material3.Text(text = "Fetching location data...")
-            }
-        }
-    } else {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            androidx.compose.material3.Text(text = "Permission required to access location.")
-        }
-    }
-}
-
-@Composable
-fun WeatherScreen(weatherViewModel: WeatherViewModel){
+fun Home(weatherViewModel: WeatherViewModel) {
     var isRainy by remember { mutableStateOf(true) }
+
     val weatherRespone by weatherViewModel.weather.collectAsState()
-    val weatherData = weatherRespone?.data?.weather
 
     var tempC = ""
     var desc = ""
@@ -172,6 +124,7 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel){
     var windSpeed = ""
     val hourlyInfoList = mutableListOf<Triple<String, String, String>>()
     val filteredHourlyData = mutableListOf<Hourly>()
+    val filteredHourly7Day = mutableListOf<Weather>()
     var weatherDate = ""
     var weatherCode = ""
     var uvIndex = ""
@@ -291,9 +244,16 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel){
                 Spacer(modifier = Modifier.height(30.dp))
             }
             item {
-                if (weatherData != null) {
-                    NextForecast( weatherData = weatherData, mainColor)
-                }
+                val sampleForecasts = listOf(
+                    Forecast("Monday", "13°C", "10°C", Icons.Default.WbCloudy),
+                    Forecast("Tuesday", "15°C", "12°C", Icons.Default.WbSunny),
+                    Forecast("Wednesday", "17°C", "14°C", Icons.Default.WbCloudy),
+                    Forecast("Thursday", "18°C", "15°C", Icons.Default.WbSunny),
+                    Forecast("Friday", "20°C", "16°C", Icons.Default.WbCloudy),
+                    Forecast("Saturday", "22°C", "18°C", Icons.Default.WbSunny),
+                    Forecast("Sunday", "21°C", "17°C", Icons.Default.WbCloudy)
+                )
+                NextForecast(forecastList = sampleForecasts, mainColor)
                 Spacer(modifier = Modifier.height(30.dp))
             }
             item {
@@ -301,34 +261,13 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel){
                 Spacer(modifier = Modifier.height(30.dp))
             }
 
-//            val currentTime = LocalTime.now()
-//            val sunriseTime = LocalTime.parse(sunRise, DateTimeFormatter.ofPattern("hh:mm a"))
-//            val sunsetTime = LocalTime.parse(sunSet, DateTimeFormatter.ofPattern("hh:mm a"))
-//
-//            val isDaytime = currentTime.isAfter(sunriseTime) && currentTime.isBefore(sunsetTime)
-//
-//            if (isDaytime) {
-//                item {
-//                    SunriseSunsetSlider(mainColor, sunrise = sunRise, sunset = sunSet)
-//                    Spacer(modifier = Modifier.height(40.dp))
-//                }
-//            }
+            item {
+                SunriseSunsetSlider(mainColor, sunrise = sunRise, sunset = sunSet)
+                Spacer(modifier = Modifier.height(40.dp))
+            }
         }
     }
 }
-
-@Composable
-fun LoadingSection() {
-    return Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator(color = Color.White)
-
-    }
-}
-
 
 @Composable
 fun Header(onNotificationClick: () -> Unit) {
@@ -752,8 +691,7 @@ fun getDayNightIconResource(isDaytime: Boolean, weatherCode: String): Int {
     }
 }
 @Composable
-fun NextForecast (weatherData: List<Weather>, mainColor: Color) {
-
+fun NextForecast (forecastList: List<Forecast>, mainColor: Color) {
     Box(
         modifier = Modifier.padding(start = 32.dp, end = 32.dp)
     ) {
@@ -785,27 +723,22 @@ fun NextForecast (weatherData: List<Weather>, mainColor: Color) {
                     modifier = Modifier.size(20.dp)
                 )
             }
-            weatherData.forEach { weather ->
-                NextForecastItem(weather)
+            forecastList.forEach { forecast ->
+                NextForecastItem(forecast)
             }
         }
     }
 }
 
 @Composable
-fun NextForecastItem (weather: Weather) {
-    val weatherCode = weather?.hourly?.get(11)?.weatherCode ?: "0"
-    val iconResource = getIconResource(weatherCode)
-    val maxTempC = weather?.maxtempC ?: "0"
-    val minTempC = weather?.mintempC ?: "0"
-
+fun NextForecastItem (forecast: Forecast) {
     Row(
         modifier = Modifier.padding(start = 17.dp, end = 17.dp, top = 24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.weight(3f)) {
             Text(
-                text = weather.date,
+                text = forecast.day,
                 fontSize = 18.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -814,7 +747,7 @@ fun NextForecastItem (weather: Weather) {
         }
 
         Icon(
-            painter = painterResource(id = iconResource),
+            imageVector = forecast.icon,
             contentDescription = "Description of the icon",
             tint = Color.White,
             modifier = Modifier.size(20.dp)
@@ -823,7 +756,7 @@ fun NextForecastItem (weather: Weather) {
         Spacer(modifier = Modifier.weight(1f))
 
         Text(
-            text = "${maxTempC}°",
+            text = forecast.highTemp,
             fontSize = 18.sp,
             color = Color.White,
             fontWeight = FontWeight.Bold,
@@ -832,35 +765,13 @@ fun NextForecastItem (weather: Weather) {
         Spacer(modifier = Modifier.width(8.dp))
 
         Text(
-            text = "${minTempC}°",
+            text = forecast.lowTemp,
             fontSize = 18.sp,
             color = Color.White.copy(alpha = 0.5f),
             fontWeight = FontWeight.Bold,
         )
     }
 }
-
-fun getIconResource(weatherCode: String): Int {
-    return when (weatherCode) {
-        "227" -> R.drawable.blowingsnow
-        "179", "323", "326", "329", "332", "335", "338", "350", "392" -> R.drawable.snow
-        "182", "311", "314", "368", "371", "374", "377" -> R.drawable.sleet
-        "230", "395" -> R.drawable.blizzard
-        "386", "389" -> R.drawable.rainandthunderstorm
-        "200" -> R.drawable.severthunderstorm
-        "185", "263", "266", "281", "284" -> R.drawable.drizzle
-        "176", "296", "299", "302", "317", "320", "356", "359" -> R.drawable.rain
-        "293", "353", "362", "365" -> R.drawable.scatteradshowers
-        "305", "308" -> R.drawable.heavyrain
-        "143", "248", "260" -> R.drawable.fog
-        "116" -> R.drawable.partlycloudy
-        "119", "122" -> R.drawable.cloudy
-        "113" -> R.drawable.sunny
-        else -> 0
-    }
-}
-
-
 
 @Composable
 fun InfoBox(icon: ImageVector, description: String, value: String, unit: String, mainColor: Color, modifier: Modifier = Modifier) {
