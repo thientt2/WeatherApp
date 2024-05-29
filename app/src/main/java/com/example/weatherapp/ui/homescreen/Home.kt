@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -22,13 +23,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.Slider
 import androidx.compose.material.SliderDefaults
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Cloud
@@ -65,6 +71,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import com.example.weatherapp.ui.theme.DeepBlue
 import com.example.weatherapp.ui.theme.WeatherAppTheme
 
@@ -121,6 +128,8 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
     val location by locationViewModel.location.collectAsState()
     val weather by weatherViewModel.weather.collectAsState()
 
+
+
     var permissionGranted by remember { mutableStateOf(false) }
     val locationPermissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
 
@@ -158,6 +167,10 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
 
 @Composable
 fun WeatherScreen(weatherViewModel: WeatherViewModel){
+    var searchScreenVisible by remember { mutableStateOf(false) }
+
+    val onSearchClick: () -> Unit = { searchScreenVisible = true }
+
     var isRainy by remember { mutableStateOf(true) }
     val weatherRespone by weatherViewModel.weather.collectAsState()
     val weatherData = weatherRespone?.data?.weather
@@ -259,7 +272,6 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel){
             .fillMaxSize()
             .background(brush = gradientBrush)
     ) {
-        Header(onNotificationClick = { isRainy = !isRainy })
         LazyColumn(
             modifier = Modifier
                 .matchParentSize()
@@ -314,6 +326,12 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel){
 //                }
 //            }
         }
+        if (searchScreenVisible) {
+            SearchScreen(onBackPressed = { searchScreenVisible = false })
+        } else {
+            Header(onNotificationClick = { isRainy = !isRainy },  onSearchClick = onSearchClick)
+            // Các phần còn lại của WeatherScreen
+        }
     }
 }
 
@@ -329,9 +347,96 @@ fun LoadingSection() {
     }
 }
 
+@Composable
+fun SearchScreen(
+    onBackPressed: () -> Unit,
+) {
+    var searchText by remember { mutableStateOf("") }
+
+    val cities = listOf("Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ")
+
+    val filteredCities = cities.filter {
+        it.contains(searchText, ignoreCase = true)
+    }
+
+
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = Color.White)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .fillMaxSize()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Hủy",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable {
+                        onBackPressed()
+                    }
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                TextField(
+                    value = searchText,
+                    onValueChange = { searchText = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .border(2.dp, Color.Black, RoundedCornerShape(20.dp))
+                        .padding(horizontal = 4.dp),
+                    placeholder = { Text("Tìm kiếm") },
+                    textStyle = TextStyle(fontSize = 16.sp),
+                    singleLine = true,
+                    colors = TextFieldDefaults.textFieldColors(
+                        backgroundColor = Color.White,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                val chunkSize = 2 // Số lượng thành phần tối đa trong mỗi hàng
+                val chunkedCities = filteredCities.chunked(chunkSize)
+
+                items(chunkedCities) { chunkedCityList ->
+                    LazyRow {
+                        items(chunkedCityList) { city ->
+                            Button(
+                                onClick = { }, // Xử lý khi thành phố được chọn
+                                modifier = Modifier
+                                    .padding(end = 16.dp, bottom = 8.dp),
+                                colors = ButtonDefaults.buttonColors(backgroundColor = Grey60),
+                            ) {
+                                Text(text = city, color = Color.White)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
-fun Header(onNotificationClick: () -> Unit) {
+fun Header(
+    onNotificationClick: () -> Unit,
+    onSearchClick: () -> Unit // Thêm callback cho việc nhấn vào vị trí hoặc text
+) {
     val locationPainter: Painter = painterResource(id = R.drawable.location)
     Row(
         modifier = Modifier
@@ -345,26 +450,25 @@ fun Header(onNotificationClick: () -> Unit) {
                 painter = locationPainter,
                 contentDescription = "Description of the image",
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.size(24.dp, 24.dp)
+                modifier = Modifier
+                    .size(24.dp, 24.dp)
+                    .clickable {
+                        onSearchClick() // Khi nhấn vào vị trí, gọi hàm callback để mở màn hình tìm kiếm
+                    }
             )
 
             Spacer(modifier = Modifier.width(4.dp))
 
             Text(
-                modifier = Modifier.padding(start = 5.dp),
+                modifier = Modifier
+                    .padding(start = 5.dp)
+                    .clickable {
+                        onSearchClick() // Khi nhấn vào văn bản, gọi hàm callback để mở màn hình tìm kiếm
+                    },
                 text = "TP. HCM",
                 fontSize = 18.sp,
                 color = Color.White,
-                fontWeight = FontWeight.Bold,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = "Cloud Icon",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
+                fontWeight = FontWeight.Bold
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -376,13 +480,13 @@ fun Header(onNotificationClick: () -> Unit) {
                 modifier = Modifier
                     .size(24.dp)
                     .clickable {
-                        // Khi nhấn vào nút thông báo, gọi hàm onNotificationClick để cập nhật giá trị isRainy
                         onNotificationClick()
                     }
             )
         }
     }
 }
+
 
 @Composable
 fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,weatherCode: String) {
