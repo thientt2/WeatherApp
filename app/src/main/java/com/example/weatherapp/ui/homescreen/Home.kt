@@ -26,9 +26,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Slider
 import androidx.compose.material.SliderDefaults
 //noinspection UsingMaterialAndMaterial3Libraries
@@ -55,6 +58,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -71,6 +75,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import com.example.weatherapp.ui.theme.DeepBlue
 import com.example.weatherapp.ui.theme.WeatherAppTheme
@@ -78,6 +83,7 @@ import com.example.weatherapp.ui.theme.WeatherAppTheme
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
@@ -357,27 +363,26 @@ fun LoadingSection() {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SearchScreen(
     cityViewModel: CityViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onBackPressed: () -> Unit,
 ) {
     var searchText by remember { mutableStateOf("") }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     val cities = listOf("Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ")
 
     val filteredCities = cities.filter {
         it.contains(searchText, ignoreCase = true)
     }
 
-
-    LaunchedEffect(searchText) {
-        delay(300) // debounce 300ms
-        cityViewModel.fetchCity(searchText)
-    }
+    var isEnterPressed by remember { mutableStateOf(false) }
 
     val citySearchRespone by cityViewModel.city.collectAsState()
 
-    val listCitySearch = citySearchRespone?.data
+
         
     Box(
         modifier = Modifier
@@ -402,8 +407,7 @@ fun SearchScreen(
                 )
 
                 Spacer(modifier = Modifier.width(16.dp))
-
-                TextField(
+                OutlinedTextField(
                     value = searchText,
                     onValueChange = { searchText = it },
                     modifier = Modifier
@@ -418,9 +422,20 @@ fun SearchScreen(
                         backgroundColor = Color.White,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
-                    )
+                    ),
+
                 )
             }
+
+
+                LaunchedEffect(searchText) {
+                    delay(300) // debounce 300ms
+                    cityViewModel.fetchCity(searchText)
+
+                }
+
+            val listCitySearch = citySearchRespone
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -448,7 +463,7 @@ fun SearchScreen(
                     val city = listCitySearch!![index]
 
                     Text(
-                        text = city.name,
+                        text = city.display_name,
                         modifier = Modifier
                             .padding(vertical = 8.dp, horizontal = 16.dp)
                             .fillMaxWidth()

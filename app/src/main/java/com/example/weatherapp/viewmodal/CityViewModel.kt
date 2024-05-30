@@ -2,6 +2,7 @@ package com.example.weatherapp.viewmodal
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.weatherapp.modal.location.City
 import com.example.weatherapp.modal.location.CityRespone
 import com.example.weatherapp.modal.location.CitySearchRespone
 import com.example.weatherapp.modal.location.LocationData
@@ -11,8 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class CityViewModel: ViewModel() {
-    private val _city = MutableStateFlow<CitySearchRespone?>(null)
-    val city: StateFlow<CitySearchRespone?> get() = _city
+    private val _city = MutableStateFlow<List<City>?>(null)
+    val city: StateFlow<List<City>?> get() = _city
 
     private val _cityLatLon = MutableStateFlow<CityRespone?>(null)
     val cityLatLon: StateFlow<CityRespone?> get() = _cityLatLon
@@ -22,7 +23,7 @@ class CityViewModel: ViewModel() {
             try{
                 val respone = RetrofitInstance.apiCity.getCityName(cityName)
                 _city.value = respone
-                println("Success city api: ${respone}")
+
             } catch (e: Exception){
                 println("false city------------------")
                 e.printStackTrace()

@@ -24,6 +24,7 @@ object RetrofitInstance {
             .build()
             .create(WeatherApiService::class.java)
     }
+    
 
     val apiCity : CityApiService by lazy{
         Retrofit.Builder()
