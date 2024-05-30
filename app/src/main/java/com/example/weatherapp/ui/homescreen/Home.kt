@@ -336,7 +336,6 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewMod
             item {
                 MainInfo(
                     tempC = tempC,
-                    desc = desc,
                     maxtemp = maxtemp,
                     mintemp = mintemp,
                     weatherCode = weatherCode,
@@ -594,10 +593,13 @@ fun Header(
 
 
 @Composable
-fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,weatherCode: String) {
+fun MainInfo (tempC: String, maxtemp: String, mintemp: String,weatherCode: String) {
     val regularFont = FontFamily(
         Font(R.font.sfprodisplay_regular),
     )
+
+    val locale = Locale.getDefault()
+    val desc = WeatherDescription.fromCode(weatherCode, locale)
 
     val context = LocalContext.current
     val isDaytime = isDaytime()
@@ -619,7 +621,7 @@ fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,weat
             fontSize = 64.sp,
             color = Color.White,
             fontFamily = regularFont,
-            modifier = Modifier.padding(start = 20.dp),
+            modifier = Modifier.padding(start = 15.dp),
             fontWeight = FontWeight.Bold,
         )
         Column(
@@ -645,6 +647,70 @@ fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,weat
         }
     }
 }
+
+enum class WeatherDescription(val code: String, val descriptionEn: String, val descriptionVi: String) {
+    CLEAR_SUNNY("113", "Clear/Sunny", "Trời trong/Xanh"),
+    PARTLY_CLOUDY("116", "Partly Cloudy", "Có mây từng đợt"),
+    CLOUDY("119", "Cloudy", "Nhiều mây"),
+    OVERCAST("122", "Overcast", "U ám"),
+    MIST("143", "Mist", "Sương mù"),
+    PATCHY_RAIN_NEARBY("176", "Patchy rain nearby", "Mưa rải rác gần đây"),
+    PATCHY_SNOW_NEARBY("179", "Patchy snow nearby", "Tuyết rải rác gần đây"),
+    PATCHY_SLEET_NEARBY("182", "Patchy sleet nearby", "Mưa đá rải rác gần đây"),
+    PATCHY_FREEZING_DRIZZLE_NEARBY("185", "Patchy freezing drizzle nearby", "Mưa phùn rải rác gần đây"),
+    THUNDERY_OUTBREAKS_NEARBY("200", "Thundery outbreaks in nearby", "Dông gần đây"),
+    BLOWING_SNOW("227", "Blowing snow", "Tuyết thổi"),
+    BLIZZARD("230", "Blizzard", "Bão tuyết"),
+    FOG("248", "Fog", "Sương mù"),
+    FREEZING_FOG("260", "Freezing fog", "Sương mù đóng băng"),
+    PATCHY_LIGHT_DRIZZLE("263", "Patchy light drizzle", "Mưa phùn rải rác"),
+    LIGHT_DRIZZLE("266", "Light drizzle", "Mưa phùn nhẹ"),
+    FREEZING_DRIZZLE("281", "Freezing drizzle", "Mưa phùn đóng băng"),
+    HEAVY_FREEZING_DRIZZLE("284", "Heavy freezing drizzle", "Mưa phùn đóng băng nặng"),
+    PATCHY_LIGHT_RAIN("293", "Patchy light rain", "Mưa nhẹ rải rác"),
+    LIGHT_RAIN("296", "Light rain", "Mưa nhẹ"),
+    MODERATE_RAIN_AT_TIMES("299", "Moderate rain at times", "Mưa vừa phải từng lúc"),
+    MODERATE_RAIN("302", "Moderate rain", "Mưa vừa"),
+    HEAVY_RAIN_AT_TIMES("305", "Heavy rain at times", "Mưa nặng từng lúc"),
+    HEAVY_RAIN("308", "Heavy rain", "Mưa nặng"),
+    LIGHT_FREEZING_RAIN("311", "Light freezing rain", "Mưa đông lạnh nhẹ"),
+    MODERATE_OR_HEAVY_FREEZING_RAIN("314", "Moderate or Heavy freezing rain", "Mưa đông lạnh vừa hoặc nặng"),
+    LIGHT_SLEET("317", "Light sleet", "Mưa đá nhẹ"),
+    MODERATE_OR_HEAVY_SLEET("320", "Moderate or heavy sleet", "Mưa đá vừa hoặc nặng"),
+    PATCHY_LIGHT_SNOW("323", "Patchy light snow", "Tuyết nhẹ rải rác"),
+    LIGHT_SNOW("326", "Light snow", "Tuyết nhẹ"),
+    PATCHY_MODERATE_SNOW("329", "Patchy moderate snow", "Tuyết vừa rải rác"),
+    MODERATE_SNOW("332", "Moderate snow", "Tuyết vừa"),
+    PATCHY_HEAVY_SNOW("335", "Patchy heavy snow", "Tuyết nặng rải rác"),
+    HEAVY_SNOW("338", "Heavy snow", "Tuyết nặng"),
+    ICE_PELLETS("350", "Ice pellets", "Mưa đá nhỏ"),
+    LIGHT_RAIN_SHOWER("353", "Light rain shower", "Mưa rào nhẹ"),
+    MODERATE_OR_HEAVY_RAIN_SHOWER("356", "Moderate or heavy rain shower", "Mưa rào vừa hoặc nặng"),
+    TORRENTIAL_RAIN_SHOWER("359", "Torrential rain shower", "Mưa rào nặng hạt"),
+    LIGHT_SLEET_SHOWERS("362", "Light sleet showers", "Mưa đá nhẹ rải rác"),
+    MODERATE_OR_HEAVY_SLEET_SHOWERS("365", "Moderate or heavy sleet showers", "Mưa đá vừa hoặc nặng rải rác"),
+    LIGHT_SNOW_SHOWERS("368", "Light snow showers", "Tuyết nhẹ rải rác"),
+    MODERATE_OR_HEAVY_SNOW_SHOWERS("371", "Moderate or heavy snow showers", "Tuyết vừa hoặc nặng rải rác"),
+    LIGHT_SHOWERS_OF_ICE_PELLETS("374", "Light showers of ice pellets", "Mưa đá nhỏ rải rác"),
+    MODERATE_OR_HEAVY_SHOWERS_OF_ICE_PELLETS("377", "Moderate or heavy showers of ice pellets", "Mưa đá nhỏ vừa hoặc nặng rải rác"),
+    PATCHY_LIGHT_RAIN_WITH_THUNDER("386", "Patchy light rain in area with thunder", "Mưa nhẹ rải rác trong khu vực có sấm sét"),
+    MODERATE_OR_HEAVY_RAIN_WITH_THUNDER("389", "Moderate or heavy rain in area with thunder", "Mưa vừa hoặc nặng trong khu vực có sấm sét"),
+    PATCHY_LIGHT_SNOW_WITH_THUNDER("392", "Patchy light snow in area with thunder", "Tuyết nhẹ rải rác trong khu vực có sấm sét"),
+    MODERATE_OR_HEAVY_SNOW_WITH_THUNDER("395", "Moderate or heavy snow in area with thunder", "Tuyết vừa hoặc nặng trong khu vực có sấm sét"),
+
+    UNKNOWN("0000", "Unknown", "Không xác định");
+
+    companion object {
+        fun fromCode(code: String, locale: Locale): String {
+            return values().find { it.code == code }?.let {
+                if (locale.language == "vi") it.descriptionVi else it.descriptionEn
+            } ?: UNKNOWN.let {
+                if (locale.language == "vi") it.descriptionVi else it.descriptionEn
+            }
+        }
+    }
+}
+
 
 fun getBitmapFromResource(context: Context, resId: Int): Bitmap {
     val options = BitmapFactory.Options().apply {
