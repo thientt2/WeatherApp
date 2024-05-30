@@ -18,6 +18,9 @@ class CityViewModel: ViewModel() {
     private val _cityLatLon = MutableStateFlow<CityRespone?>(null)
     val cityLatLon: StateFlow<CityRespone?> get() = _cityLatLon
 
+    private val _currentCity = MutableStateFlow<CityRespone?>(null)
+    val currentCity: StateFlow<CityRespone?> get() = _currentCity
+
     fun fetchCity(cityName: String){
         viewModelScope.launch {
             try{
@@ -44,4 +47,19 @@ class CityViewModel: ViewModel() {
             }
         }
     }
+
+    fun fetchCurrentCityByLatLon(lat: Double, lon: Double){
+        viewModelScope.launch {
+            try{
+                val respone = RetrofitInstance.apiCity.getCityNameByLatLon(lat,lon)
+                _currentCity.value = respone
+                println("Success city api--------------: ${respone}")
+            } catch (e: Exception){
+                println("false city by lat lon------------------")
+                e.printStackTrace()
+            }
+        }
+    }
+
+
 }

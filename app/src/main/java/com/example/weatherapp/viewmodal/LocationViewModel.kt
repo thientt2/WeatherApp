@@ -13,7 +13,10 @@ import okhttp3.internal.wait
 
 class LocationViewModel : ViewModel() {
     private val _location = MutableStateFlow<LocationData?>(null)
+    private val _currentLocation = MutableStateFlow<LocationData?>(null)
     val location: StateFlow<LocationData?> get() = _location
+    val currentLocation: StateFlow<LocationData?> get() = _currentLocation
+
 
     fun fetchLocation(context: Context) {
         viewModelScope.launch {
@@ -24,6 +27,23 @@ class LocationViewModel : ViewModel() {
                     _location.value = LocationData(locationResult.latitude, locationResult.longitude)
                 }
                 println("success: ${_location.value}")
+            } catch (e: SecurityException) {
+                // Handle exception
+                println("failed location:----------------------------------------")
+
+            }
+        }
+    }
+
+    fun fetchCurrentLocation(context: Context) {
+        viewModelScope.launch {
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+            try {
+                val locationResult = fusedLocationClient.lastLocation.await()
+                if (locationResult != null) {
+                    _currentLocation.value = LocationData(locationResult.latitude, locationResult.longitude)
+                }
+                println("success: ${_currentLocation.value}")
             } catch (e: SecurityException) {
                 // Handle exception
                 println("failed location:----------------------------------------")

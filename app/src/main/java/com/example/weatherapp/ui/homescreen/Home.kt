@@ -141,6 +141,7 @@ fun Home(weatherViewModel: WeatherViewModel = androidx.lifecycle.viewmodel.compo
 fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationViewModel, cityViewModel: CityViewModel = androidx.lifecycle.viewmodel.compose.viewModel()){
     val context = LocalContext.current
     val location by locationViewModel.location.collectAsState()
+    val currentLocation by locationViewModel.currentLocation.collectAsState()
     val weather by weatherViewModel.weather.collectAsState()
     val city by cityViewModel.cityLatLon.collectAsState()
 
@@ -153,6 +154,7 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
         if (locationPermissionState.status.isGranted) {
             permissionGranted = true
             locationViewModel.fetchLocation(context)
+            locationViewModel.fetchCurrentLocation(context)
         } else {
             locationPermissionState.launchPermissionRequest()
         }
@@ -165,22 +167,55 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
 
     fun saveSelectedCity(city: City, index: Int) {
         val editor = sharedPreferences.edit()
-        editor.putString("City-${index}", city.toString())
+        editor.putString("City-${city.name}", city.toString())
         editor.apply()
     }
 
-    val selectedCity = sharedPreferences.getString("City-0", null)
-    println("--------------------------${selectedCity}")
+    fun getSavedCities(): List<City> {
+        val cities = mutableListOf<City>()
+        val allEntries = sharedPreferences.all
+        for (entry in allEntries) {
+            if (entry.key.startsWith("City-")) {
+                val cityString = entry.value as String
+                val city = City.fromString(cityString)
+                cities.add(city)
+            }
+        }
+        return cities
+    }
 
+    fun clearSharedPreferences() {
+        val editor = sharedPreferences.edit()
+        editor.clear()
+        editor.apply()
+    }
 
 
     if (permissionGranted) {
         Surface(color = MaterialTheme.colorScheme.background) {
             if (location != null) {
+
+                val currentCity by cityViewModel.currentCity.collectAsState()
+
                 LaunchedEffect(location) {
                     weatherViewModel.fetchWeather(location!!.latitude,location!!.longitude )
                     cityViewModel.fetchCityByLatLon(location!!.latitude,location!!.longitude)
+                    cityViewModel.fetchCurrentCityByLatLon(currentLocation!!.latitude, currentLocation!!.longitude)
                     println("Change location -------------------${location!!.latitude}  ${location!!.longitude}------------------------")
+                }
+
+                LaunchedEffect(currentCity) {
+                    if(currentCity!=null){
+                        val savedCityString = sharedPreferences.getString("City-0", null)
+                        val stringCity = City(currentCity!!.lat,currentCity!!.lon,currentCity!!.address.city, "")
+
+                        println("CurrentCity----------------------${stringCity}")
+                        if (savedCityString == null || savedCityString != stringCity.toString()) {
+                            val editor = sharedPreferences.edit()
+                            editor.putString("City-0", stringCity.toString())
+                            editor.apply()
+                        }
+                    }
                 }
                 Log.d("Dcmm","-----${location!!.longitude}---${location!!.longitude}")
                 if (weather != null && city != null) {
@@ -188,11 +223,9 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
 
                         WeatherScreen(weatherViewModel,cityViewModel, onCitySelected = {newLat, newLon,city, index  ->
                             locationViewModel.changeLocation(newLat,newLon)
-//                            setSearchVisible()
+                            setSearchVisible()
                             saveSelectedCity(city, index)
-                            val selectedCity = sharedPreferences.getString("City-0", null)
-                            println("--------------------------${selectedCity}")
-                    }, setSearchVisible, searchScreenVisible = searchVisible)
+                    }, setSearchVisible, searchScreenVisible = searchVisible, getSavedCities = { getSavedCities() })
                 } else {
                     LoadingSection()
                 }
@@ -208,7 +241,8 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
 }
 
 @Composable
-fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewModel, onCitySelected: (Double,Double, City, Int)->Unit,setSearchVisible: () -> Unit, searchScreenVisible: Boolean){
+fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewModel, onCitySelected: (Double,Double, City, Int)->Unit,
+                  setSearchVisible: () -> Unit, searchScreenVisible: Boolean, getSavedCities: () -> List<City>){
     val onSearchClick: () -> Unit = { setSearchVisible() }
 
     var isRainy by remember { mutableStateOf(true) }
@@ -386,7 +420,8 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewMod
             ) {
                 SearchScreen(
                     onBackPressed = { setSearchVisible() },
-                    onCitySelected = onCitySelected
+                    onCitySelected = onCitySelected,
+                    getSavedCities = getSavedCities
                 )
             }
         if (!searchScreenVisible) {
@@ -415,21 +450,12 @@ fun SearchScreen(
     cityViewModel: CityViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onBackPressed: () -> Unit,
     onCitySelected: (Double,Double, City, Int) -> Unit,
+    getSavedCities: () -> List<City>
 ) {
+    val savedCities by remember { mutableStateOf(getSavedCities()) }
+    println("HistoryCity-----------------${savedCities}")
     var searchText by remember { mutableStateOf("") }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    val cities = listOf("Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ")
-
-    val filteredCities = cities.filter {
-        it.contains(searchText, ignoreCase = true)
-    }
-
-    var isEnterPressed by remember { mutableStateOf(false) }
-
     val citySearchRespone by cityViewModel.city.collectAsState()
-
-
 
     Box(
         modifier = Modifier
@@ -494,7 +520,8 @@ fun SearchScreen(
             ) {
 //                val chunkSize = 2 // Số lượng thành phần tối đa trong mỗi hàng
 //                val chunkedCities = filteredCities.chunked(chunkSize)
-//
+//h cái savedCities của t nó chứa list City đó m hiển thị j thì hiển thị đi có lat,lon,name,displayname r đó, click vào text nào là nó lưu lại city đó r
+//                để t khởi tạo giá trị storage ban đầu là Dĩ An nữa đã
 //                items(chunkedCities) { listCitySearch ->
 //                    LazyRow {
 //                        items(listCitySearch) { city ->
@@ -509,6 +536,7 @@ fun SearchScreen(
 //                        }
 //                    }
 //                }
+
                 items(listCitySearch?.size ?: 0) { index ->
                     val city = listCitySearch!![index]
 
@@ -518,12 +546,43 @@ fun SearchScreen(
                             .padding(start = 24.dp, bottom = 16.dp, top = 16.dp, end = 16.dp)
                             .fillMaxWidth()
                             .clickable {
-                                onCitySelected(city.lat.toDouble(), city.lon.toDouble(), city,index)
-
+                                onCitySelected(
+                                    city.lat.toDouble(),
+                                    city.lon.toDouble(),
+                                    city,
+                                    index
+                                )
                             }
                     )
                 }
             }
+
+//            LazyColumn(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(bottom = 16.dp)
+//            ) {
+//                items(savedCities.size) { index ->
+//                    val city = savedCities[index]
+//                    Box(
+//                        modifier = Modifier.size(300.dp, 200.dp).background(color = Color.Blue)
+//                    ) {
+//                        Text(
+//                            text = city.name,
+//                            modifier = Modifier
+//                                .padding(vertical = 8.dp)
+//                                .clickable {
+//                                    onCitySelected(
+//                                        city.lat.toDouble(),
+//                                        city.lon.toDouble(),
+//                                        city,
+//                                        index
+//                                    )
+//                                }
+//                        )
+//                    }
+//                }
+//            }
         }
     }
 }
@@ -550,7 +609,7 @@ fun Header(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(24.dp, 24.dp)
-                    .clickable (
+                    .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
@@ -563,7 +622,7 @@ fun Header(
             Text(
                 modifier = Modifier
                     .padding(start = 5.dp)
-                    .clickable (
+                    .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
@@ -1191,7 +1250,9 @@ fun InfoBox(icon: ImageVector, description: String, value: String, unit: String,
             Spacer(modifier = Modifier.height(6.dp))
 
             Row(
-                modifier = Modifier.fillMaxHeight().padding(top = 6.dp),
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(top = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
