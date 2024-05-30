@@ -31,4 +31,8 @@ class LocationViewModel : ViewModel() {
             }
         }
     }
+
+    fun changeLocation(lat:Double, lon:Double){
+        _location.value = LocationData(lat,lon)
+    }
 }

@@ -37,7 +37,7 @@ class CityViewModel: ViewModel() {
             try{
                 val respone = RetrofitInstance.apiCity.getCityNameByLatLon(lat,lon)
                 _cityLatLon.value = respone
-                println("Success city api: ${respone}")
+                println("Success city api--------------: ${respone}")
             } catch (e: Exception){
                 println("false city by lat lon------------------")
                 e.printStackTrace()

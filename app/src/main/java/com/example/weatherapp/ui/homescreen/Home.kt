@@ -4,6 +4,11 @@ import android.Manifest
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -139,6 +144,7 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
 
 
     var permissionGranted by remember { mutableStateOf(false) }
+    var searchVisible by remember { mutableStateOf(false) }
     val locationPermissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
 
     LaunchedEffect(locationPermissionState.status) {
@@ -150,15 +156,41 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
         }
     }
 
+    val sharedPreferences = LocalContext.current.getSharedPreferences(
+        "MySharedPreferences",
+        Context.MODE_PRIVATE
+    )
+
+    fun saveSelectedCity(city: City, index: Int) {
+        val editor = sharedPreferences.edit()
+        editor.putString("City-${index}", city.toString())
+        editor.apply()
+    }
+
+    val selectedCity = sharedPreferences.getString("City-0", null)
+    println("--------------------------${selectedCity}")
+
+
+
     if (permissionGranted) {
         Surface(color = MaterialTheme.colorScheme.background) {
             if (location != null) {
                 LaunchedEffect(location) {
-                    weatherViewModel.fetchWeather(location!!.latitude, location!!.longitude)
+                    weatherViewModel.fetchWeather(location!!.latitude,location!!.longitude )
                     cityViewModel.fetchCityByLatLon(location!!.latitude,location!!.longitude)
+                    println("Change location -------------------${location!!.latitude}  ${location!!.longitude}------------------------")
                 }
+                Log.d("Dcmm","-----${location!!.longitude}---${location!!.longitude}")
                 if (weather != null && city != null) {
-                    WeatherScreen(weatherViewModel,cityViewModel)
+                    val setSearchVisible: () -> Unit = { searchVisible = !searchVisible }
+
+                        WeatherScreen(weatherViewModel,cityViewModel, onCitySelected = {newLat, newLon,city, index  ->
+                            locationViewModel.changeLocation(newLat,newLon)
+//                            setSearchVisible()
+                            saveSelectedCity(city, index)
+                            val selectedCity = sharedPreferences.getString("City-0", null)
+                            println("--------------------------${selectedCity}")
+                    }, setSearchVisible, searchScreenVisible = searchVisible)
                 } else {
                     LoadingSection()
                 }
@@ -174,10 +206,8 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
 }
 
 @Composable
-fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewModel){
-    var searchScreenVisible by remember { mutableStateOf(false) }
-
-    val onSearchClick: () -> Unit = { searchScreenVisible = true }
+fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewModel, onCitySelected: (Double,Double, City, Int)->Unit,setSearchVisible: () -> Unit, searchScreenVisible: Boolean){
+    val onSearchClick: () -> Unit = { setSearchVisible() }
 
     var isRainy by remember { mutableStateOf(true) }
     val weatherRespone by weatherViewModel.weather.collectAsState()
@@ -254,7 +284,7 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewMod
     var cityName = ""
 
     cityRespone.let { data ->
-        cityName = data?.address?.county ?: "Loading..."
+        cityName = data?.address?.city ?: "Loading..."
     }
 
     val gradientBrush = if (isRainy) {
@@ -342,9 +372,18 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewMod
 //                }
 //            }
         }
-        if (searchScreenVisible) {
-            SearchScreen(onBackPressed = { searchScreenVisible = false })
-        } else {
+            AnimatedVisibility(
+                visible = searchScreenVisible,
+                enter = fadeIn(animationSpec = tween(durationMillis = 1000)), // Thời gian hiệu ứng fadeIn là 1000ms
+                exit = fadeOut(animationSpec = tween(durationMillis = 1000)) // Thời gian hiệu ứng fadeOut là 1000ms
+            ) {
+                SearchScreen(
+                    onBackPressed = { setSearchVisible() },
+                    onCitySelected = onCitySelected
+                )
+            }
+        if (!searchScreenVisible) {
+
             Header(cityName = cityName,onNotificationClick = { isRainy = !isRainy },  onSearchClick = onSearchClick)
             // Các phần còn lại của WeatherScreen
         }
@@ -368,6 +407,7 @@ fun LoadingSection() {
 fun SearchScreen(
     cityViewModel: CityViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onBackPressed: () -> Unit,
+    onCitySelected: (Double,Double, City, Int) -> Unit,
 ) {
     var searchText by remember { mutableStateOf("") }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -383,7 +423,7 @@ fun SearchScreen(
     val citySearchRespone by cityViewModel.city.collectAsState()
 
 
-        
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -465,10 +505,11 @@ fun SearchScreen(
                     Text(
                         text = city.display_name,
                         modifier = Modifier
-                            .padding(vertical = 8.dp, horizontal = 16.dp)
+                            .padding(start = 24.dp, bottom = 16.dp, top = 16.dp, end = 16.dp)
                             .fillMaxWidth()
                             .clickable {
-                                // Xử lý khi thành phố được chọn
+                                onCitySelected(city.lat.toDouble(), city.lon.toDouble(), city,index)
+
                             }
                     )
                 }
