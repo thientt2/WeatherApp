@@ -82,6 +82,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.DecodeUtils.calculateInSampleSize
+import com.example.weatherapp.modal.location.City
 
 import com.example.weatherapp.modal.weather.Hourly
 import com.example.weatherapp.modal.weather.Weather
@@ -96,6 +97,7 @@ import com.example.weatherapp.ui.theme.Grey60
 import com.example.weatherapp.ui.theme.Grey80
 import com.example.weatherapp.ui.theme.LightSky
 import com.example.weatherapp.ui.theme.NavySky
+import com.example.weatherapp.viewmodal.CityViewModel
 import com.example.weatherapp.viewmodal.LocationViewModel
 import com.example.weatherapp.viewmodal.WeatherViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -123,11 +125,11 @@ fun Home(weatherViewModel: WeatherViewModel = androidx.lifecycle.viewmodel.compo
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationViewModel){
+fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationViewModel, cityViewModel: CityViewModel = androidx.lifecycle.viewmodel.compose.viewModel()){
     val context = LocalContext.current
     val location by locationViewModel.location.collectAsState()
     val weather by weatherViewModel.weather.collectAsState()
-
+    val city by cityViewModel.cityLatLon.collectAsState()
 
 
     var permissionGranted by remember { mutableStateOf(false) }
@@ -147,10 +149,10 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
             if (location != null) {
                 LaunchedEffect(location) {
                     weatherViewModel.fetchWeather(location!!.latitude, location!!.longitude)
-
+                    cityViewModel.fetchCityByLatLon(location!!.latitude,location!!.longitude)
                 }
-                if (weather != null) {
-                    WeatherScreen(weatherViewModel)
+                if (weather != null && city != null) {
+                    WeatherScreen(weatherViewModel,cityViewModel)
                 } else {
                     LoadingSection()
                 }
@@ -166,13 +168,14 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
 }
 
 @Composable
-fun WeatherScreen(weatherViewModel: WeatherViewModel){
+fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewModel){
     var searchScreenVisible by remember { mutableStateOf(false) }
 
     val onSearchClick: () -> Unit = { searchScreenVisible = true }
 
     var isRainy by remember { mutableStateOf(true) }
     val weatherRespone by weatherViewModel.weather.collectAsState()
+    val cityRespone by cityViewModel.cityLatLon.collectAsState()
     val weatherData = weatherRespone?.data?.weather
 
     var tempC = ""
@@ -239,6 +242,13 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel){
         }
 
 
+    }
+
+    //City
+    var cityName = ""
+
+    cityRespone.let { data ->
+        cityName = data?.address?.county ?: "Loading..."
     }
 
     val gradientBrush = if (isRainy) {
@@ -329,7 +339,7 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel){
         if (searchScreenVisible) {
             SearchScreen(onBackPressed = { searchScreenVisible = false })
         } else {
-            Header(onNotificationClick = { isRainy = !isRainy },  onSearchClick = onSearchClick)
+            Header(cityName = cityName,onNotificationClick = { isRainy = !isRainy },  onSearchClick = onSearchClick)
             // Các phần còn lại của WeatherScreen
         }
     }
@@ -349,10 +359,10 @@ fun LoadingSection() {
 
 @Composable
 fun SearchScreen(
+    cityViewModel: CityViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onBackPressed: () -> Unit,
 ) {
     var searchText by remember { mutableStateOf("") }
-
     val cities = listOf("Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ")
 
     val filteredCities = cities.filter {
@@ -360,7 +370,15 @@ fun SearchScreen(
     }
 
 
+    LaunchedEffect(searchText) {
+        delay(300) // debounce 300ms
+        cityViewModel.fetchCity(searchText)
+    }
 
+    val citySearchRespone by cityViewModel.city.collectAsState()
+
+    val listCitySearch = citySearchRespone?.data
+        
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -409,22 +427,35 @@ fun SearchScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
-                val chunkSize = 2 // Số lượng thành phần tối đa trong mỗi hàng
-                val chunkedCities = filteredCities.chunked(chunkSize)
+//                val chunkSize = 2 // Số lượng thành phần tối đa trong mỗi hàng
+//                val chunkedCities = filteredCities.chunked(chunkSize)
+//
+//                items(chunkedCities) { listCitySearch ->
+//                    LazyRow {
+//                        items(listCitySearch) { city ->
+//                            Button(
+//                                onClick = { }, // Xử lý khi thành phố được chọn
+//                                modifier = Modifier
+//                                    .padding(end = 16.dp, bottom = 8.dp),
+//                                colors = ButtonDefaults.buttonColors(backgroundColor = Grey60),
+//                            ) {
+//                                Text(text = city., color = Color.White)
+//                            }
+//                        }
+//                    }
+//                }
+                items(listCitySearch?.size ?: 0) { index ->
+                    val city = listCitySearch!![index]
 
-                items(chunkedCities) { chunkedCityList ->
-                    LazyRow {
-                        items(chunkedCityList) { city ->
-                            Button(
-                                onClick = { }, // Xử lý khi thành phố được chọn
-                                modifier = Modifier
-                                    .padding(end = 16.dp, bottom = 8.dp),
-                                colors = ButtonDefaults.buttonColors(backgroundColor = Grey60),
-                            ) {
-                                Text(text = city, color = Color.White)
+                    Text(
+                        text = city.name,
+                        modifier = Modifier
+                            .padding(vertical = 8.dp, horizontal = 16.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                // Xử lý khi thành phố được chọn
                             }
-                        }
-                    }
+                    )
                 }
             }
         }
@@ -434,10 +465,12 @@ fun SearchScreen(
 
 @Composable
 fun Header(
+    cityName: String,
     onNotificationClick: () -> Unit,
     onSearchClick: () -> Unit // Thêm callback cho việc nhấn vào vị trí hoặc text
 ) {
     val locationPainter: Painter = painterResource(id = R.drawable.location)
+
     Row(
         modifier = Modifier
             .padding(top = 44.dp, start = 24.dp, end = 24.dp),
@@ -465,7 +498,7 @@ fun Header(
                     .clickable {
                         onSearchClick() // Khi nhấn vào văn bản, gọi hàm callback để mở màn hình tìm kiếm
                     },
-                text = "TP. HCM",
+                text = cityName,
                 fontSize = 18.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
