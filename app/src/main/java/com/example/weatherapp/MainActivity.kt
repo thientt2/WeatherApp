@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
                                 )
                                 Spacer(modifier = Modifier.height(4.dp)) // Add space between icon and label
                                 Text(
-                                    "Weather",
+                                    "Thời tiết",
                                     fontWeight = FontWeight.Bold,
                                     color = if (selected.value == Icons.Default.Cloud) Blue20 else Grey60
                                 )
@@ -115,7 +115,7 @@ class MainActivity : ComponentActivity() {
                                 )
                                 Spacer(modifier = Modifier.height(4.dp)) // Add space between icon and label
                                 Text(
-                                    "News",
+                                    "Bảng tin",
                                     fontWeight = FontWeight.Bold,
                                     color = if (selected.value == Icons.Default.Newspaper) Blue20 else Grey60
                                 )

@@ -81,7 +81,7 @@ fun TrendingNewsHeader(onViewAllClicked: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Trending News",
+            text = "Tin Nổi Bật",
             fontWeight = FontWeight.Bold,
             fontSize = 30.sp,
             color = Grey80,
@@ -90,14 +90,14 @@ fun TrendingNewsHeader(onViewAllClicked: () -> Unit) {
         Spacer(modifier = Modifier.weight(10f))
 
         Text(
-            text = "View All",
+            text = "Xem tất cả",
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
+            fontSize = 18.sp,
             color = Green40,
             modifier = Modifier.clickable { onViewAllClicked() }
         )
 
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(6.dp))
 
         Icon(
             imageVector = Icons.Default.DoubleArrow,
@@ -113,10 +113,10 @@ fun TrendingNewsHeader(onViewAllClicked: () -> Unit) {
 
 @Composable
 fun CategoryList (selectedCategory: String, onCategorySelected: (String) -> Unit) {
-    val categories = listOf("top", "sports", "politics", "technology", "health", "business", "science", "entertainment", "environment", "food")
+    val categories = listOf("Phổ Biến", "Thể Thao", "Chính Trị", "Công nghệ", "Sức Khỏe", "Kinh Doanh", "Khoa Học", "Giải Trí", "Môi Trường", "Thức Ăn")
 
     LazyRow( modifier = Modifier
-        .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+        .padding(top = 8.dp, start = 16.dp, end = 16.dp),
     ) {
         items(categories) { category ->
             CategoryItem(
@@ -254,7 +254,7 @@ fun WorldNewsHeader() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Global Stories",
+            text = "Tin Quốc Tế",
             fontWeight = FontWeight.Bold,
             fontSize = 30.sp,
             color = Grey80,
@@ -469,7 +469,7 @@ fun NewsDetail(newsItem: NewsItem, onBackClicked: () -> Unit) {
                         horizontalArrangement = Arrangement.End
                     ) {
                         ClickableText(
-                            text = AnnotatedString("Read More"),
+                            text = AnnotatedString("Đọc thêm"),
                             style = TextStyle(
                                 fontSize = 23.sp,
                                 color = LightBlue,
@@ -495,7 +495,7 @@ fun TrendingNewsListAll(newsItems: List<NewsItem>, onBackClicked: () -> Unit, on
             TopAppBar(
                 title = {
                     Text(
-                        "Back",
+                        "Quay lại",
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 30.sp,

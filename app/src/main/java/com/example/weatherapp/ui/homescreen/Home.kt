@@ -13,6 +13,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -117,6 +118,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -210,6 +212,12 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewMod
     val onSearchClick: () -> Unit = { setSearchVisible() }
 
     var isRainy by remember { mutableStateOf(true) }
+    val currentTime = LocalTime.now()
+    val sixAM = LocalTime.of(6, 0) // 6 giờ sáng
+    val sixPM = LocalTime.of(18, 0) // 6 giờ tối
+
+    isRainy = !(currentTime.isAfter(sixAM) && currentTime.isBefore(sixPM))
+
     val weatherRespone by weatherViewModel.weather.collectAsState()
     val cityRespone by cityViewModel.cityLatLon.collectAsState()
     val weatherData = weatherRespone?.data?.weather
@@ -374,8 +382,8 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewMod
         }
             AnimatedVisibility(
                 visible = searchScreenVisible,
-                enter = fadeIn(animationSpec = tween(durationMillis = 1000)), // Thời gian hiệu ứng fadeIn là 1000ms
-                exit = fadeOut(animationSpec = tween(durationMillis = 1000)) // Thời gian hiệu ứng fadeOut là 1000ms
+                enter = fadeIn(animationSpec = tween(durationMillis = 200)), // Thời gian hiệu ứng fadeIn là 1000ms
+                exit = fadeOut(animationSpec = tween(durationMillis = 200)) // Thời gian hiệu ứng fadeOut là 1000ms
             ) {
                 SearchScreen(
                     onBackPressed = { setSearchVisible() },
@@ -384,7 +392,7 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewMod
             }
         if (!searchScreenVisible) {
 
-            Header(cityName = cityName,onNotificationClick = { isRainy = !isRainy },  onSearchClick = onSearchClick)
+            Header(cityName = cityName, onSearchClick = onSearchClick)
             // Các phần còn lại của WeatherScreen
         }
     }
@@ -441,7 +449,10 @@ fun SearchScreen(
                     text = "Hủy",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable {
+                    modifier = Modifier.clickable (
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
                         onBackPressed()
                     }
                 )
@@ -522,7 +533,6 @@ fun SearchScreen(
 @Composable
 fun Header(
     cityName: String,
-    onNotificationClick: () -> Unit,
     onSearchClick: () -> Unit // Thêm callback cho việc nhấn vào vị trí hoặc text
 ) {
     val locationPainter: Painter = painterResource(id = R.drawable.location)
@@ -541,7 +551,10 @@ fun Header(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(24.dp, 24.dp)
-                    .clickable {
+                    .clickable (
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
                         onSearchClick() // Khi nhấn vào vị trí, gọi hàm callback để mở màn hình tìm kiếm
                     }
             )
@@ -551,7 +564,10 @@ fun Header(
             Text(
                 modifier = Modifier
                     .padding(start = 5.dp)
-                    .clickable {
+                    .clickable (
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
                         onSearchClick() // Khi nhấn vào văn bản, gọi hàm callback để mở màn hình tìm kiếm
                     },
                 text = cityName,
@@ -569,7 +585,7 @@ fun Header(
                 modifier = Modifier
                     .size(24.dp)
                     .clickable {
-                        onNotificationClick()
+
                     }
             )
         }
@@ -594,7 +610,7 @@ fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,weat
     )
 
     Column(
-        modifier = Modifier.size(433.dp, 123.dp),
+        modifier = Modifier.size(433.dp, 150.dp),
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -607,7 +623,7 @@ fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,weat
             fontWeight = FontWeight.Bold,
         )
         Column(
-            modifier = Modifier.size(433.dp, 42.dp),
+            modifier = Modifier.size(433.dp, 52.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -618,25 +634,14 @@ fun MainInfo (tempC: String, desc: String, maxtemp: String, mintemp: String,weat
                 fontFamily = regularFont,
             )
 
-            Row(
-                modifier = Modifier.size(433.dp, 21.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "Max: ${maxtemp}°",
-                    fontSize = 18.sp,
-                    color = Color.White,
-                    fontFamily = regularFont,
-                )
-                Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.height(1.dp))
 
-                Text(
-                    text = "Min: ${mintemp}°",
-                    fontSize = 18.sp,
-                    color = Color.White,
-                    fontFamily = regularFont,
-                )
-            }
+            Text(
+                text = "${maxtemp}° / ${mintemp}°",
+                fontSize = 18.sp,
+                color = Color.White,
+                fontFamily = regularFont,
+            )
         }
     }
 }
@@ -806,7 +811,7 @@ fun TodayInfo(hourlyInfoList: MutableList<Triple<String, String, String>> ,weath
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Today",
+                    text = "Hôm nay",
                     fontSize = 20.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -814,9 +819,10 @@ fun TodayInfo(hourlyInfoList: MutableList<Triple<String, String, String>> ,weath
 
                 Spacer(modifier = Modifier.weight(1f))
 
+                val formattedDate = formatToCustomDateFormat(weatherDate)
                 Text(
-                    text = weatherDate,
-                    fontSize = 18.sp,
+                    text = formattedDate,
+                    fontSize = 16.sp,
                     color = Color.White,
                 )
             }
@@ -872,8 +878,8 @@ fun TodayInfo(hourlyInfoList: MutableList<Triple<String, String, String>> ,weath
                             Spacer(modifier = Modifier.weight(1f))
 
                             Text(
-                                text = if (index == 0) "Now" else convertToTimeFormat(info.first),
-                                fontSize = 18.sp,
+                                text = if (index == 0) "Bây giờ" else convertToTimeFormat(info.first),
+                                fontSize = 15.sp,
                                 color = Color.White,
                             )
                         }
@@ -884,6 +890,11 @@ fun TodayInfo(hourlyInfoList: MutableList<Triple<String, String, String>> ,weath
             }
         }
     }
+}
+fun formatToCustomDateFormat(dateString: String): String {
+    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, dd/MM", Locale("vi"))
+    val date = LocalDate.parse(dateString)
+    return dateFormatter.format(date)
 }
 fun isDaytime(hour: Int): Boolean {
     return hour in 6..17
@@ -963,7 +974,7 @@ fun NextForecast (weatherData: List<Weather>, mainColor: Color) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Weekly Forecast",
+                    text = "Dự báo theo tuần",
                     fontSize = 20.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -992,13 +1003,17 @@ fun NextForecastItem (weather: Weather) {
     val maxTempC = weather?.maxtempC ?: "0"
     val minTempC = weather?.mintempC ?: "0"
 
+    val date = LocalDate.parse(weather.date)
+    val formattedDate = formatDate(date)
+
+
     Row(
         modifier = Modifier.padding(start = 17.dp, end = 17.dp, top = 24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.weight(3f)) {
             Text(
-                text = weather.date,
+                text = formattedDate,
                 fontSize = 18.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -1030,6 +1045,29 @@ fun NextForecastItem (weather: Weather) {
             color = Color.White.copy(alpha = 0.5f),
             fontWeight = FontWeight.Bold,
         )
+    }
+}
+
+fun formatDate(date: LocalDate): String {
+    val today = LocalDate.now()
+    return if (date == today) {
+        "Hôm nay"
+    } else {
+        formatDateToDayOfWeek(date)
+    }
+}
+
+fun formatDateToDayOfWeek(date: LocalDate): String {
+    val dayOfWeekIndex = date.dayOfWeek.value
+    return when (dayOfWeekIndex) {
+        1 -> "Thứ Hai"
+        2 -> "Thứ Ba"
+        3 -> "Thứ Tư"
+        4 -> "Thứ Năm"
+        5 -> "Thứ Sáu"
+        6 -> "Thứ Bảy"
+        7 -> "Chủ Nhật"
+        else -> ""
     }
 }
 
@@ -1077,7 +1115,7 @@ fun InfoBox(icon: ImageVector, description: String, value: String, unit: String,
 
             Text(
                 text = description,
-                fontSize = 15.sp,
+                fontSize = 12.sp,
                 color = Color.White.copy(alpha = 0.5f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -1087,12 +1125,12 @@ fun InfoBox(icon: ImageVector, description: String, value: String, unit: String,
             Spacer(modifier = Modifier.height(6.dp))
 
             Row(
-                modifier = Modifier.fillMaxHeight(),
+                modifier = Modifier.fillMaxHeight().padding(top = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = value,
-                    fontSize = 30.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                 )
@@ -1101,12 +1139,12 @@ fun InfoBox(icon: ImageVector, description: String, value: String, unit: String,
 
                 Text(
                     text = unit,
-                    fontSize = 15.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 6.dp)
                 )
             }
         }
@@ -1117,11 +1155,11 @@ fun InfoBox(icon: ImageVector, description: String, value: String, unit: String,
 fun MoreInfo(uvIndex: String, visibility: String, cloudCover: String, mainColor: Color) {
     val uvIndexInt = uvIndex.toIntOrNull() ?: 0
     val uvDescription = when (uvIndexInt) {
-        in 0..2 -> "Low"
-        in 3..5 -> "Moderate"
-        in 6..7 -> "High"
-        in 8..10 -> "Extreme"
-        else -> "Extreme"
+        in 0..2 -> "Thấp"
+        in 3..5 -> "Vừa"
+        in 6..7 -> "Cao"
+        in 8..10 -> "Cực Độ"
+        else -> "Cực Độ"
     }
 
     Box(
@@ -1145,16 +1183,16 @@ fun MoreInfo(uvIndex: String, visibility: String, cloudCover: String, mainColor:
 
             InfoBox(
                 icon = Icons.Default.RemoveRedEye,
-                description = "Visibility",
+                description = "Tầm nhìn",
                 value = visibility,
-                unit = "Miles",
+                unit = "Dặm",
                 mainColor = mainColor,
                 modifier = Modifier.weight(1f)
             )
 
             InfoBox(
                 icon = Icons.Default.WbCloudy,
-                description = "Cloud",
+                description = "Lượng mây",
                 value = cloudCover,
                 unit = "%",
                 mainColor = mainColor,
