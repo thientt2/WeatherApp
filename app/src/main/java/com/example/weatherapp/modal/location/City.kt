@@ -7,12 +7,13 @@ data class City(
     val display_name: String
 ){
     override fun toString(): String {
-        return "$lat,$lon,$name,$display_name"
+        return "$lat;$lon;$name;$display_name"
     }
 
     companion object {
         fun fromString(cityString: String): City {
-            val parts = cityString.split(",")
+            val parts = cityString.split(";")
+            println("parts3-----------------------------${parts[3]}")
             return City(parts[0], parts[1], parts[2], parts[3])
         }
     }

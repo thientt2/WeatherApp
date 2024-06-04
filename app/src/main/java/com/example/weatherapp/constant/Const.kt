@@ -11,5 +11,10 @@ class Const {
 
         const val LOADING = "Loading..."
         const val NA = "N/A"
+        var tempCG : String = ""
+        var weatherDescG :String = ""
+        var weatherCodeG: String = ""
+        var maxTempCG: String = ""
+        var minTempCG: String = ""
     }
 }

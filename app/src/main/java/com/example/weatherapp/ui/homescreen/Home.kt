@@ -94,6 +94,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.DecodeUtils.calculateInSampleSize
+import com.example.weatherapp.constant.Const.Companion.maxTempCG
+import com.example.weatherapp.constant.Const.Companion.minTempCG
+import com.example.weatherapp.constant.Const.Companion.tempCG
+import com.example.weatherapp.constant.Const.Companion.weatherCodeG
+import com.example.weatherapp.constant.Const.Companion.weatherDescG
 import com.example.weatherapp.modal.location.City
 
 import com.example.weatherapp.modal.weather.Hourly
@@ -114,6 +119,7 @@ import com.example.weatherapp.viewmodal.LocationViewModel
 import com.example.weatherapp.viewmodal.WeatherViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -148,15 +154,22 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
 
     var permissionGranted by remember { mutableStateOf(false) }
     var searchVisible by remember { mutableStateOf(false) }
-    val locationPermissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
+    val locationPermissionState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    )
 
-    LaunchedEffect(locationPermissionState.status) {
-        if (locationPermissionState.status.isGranted) {
+    LaunchedEffect(locationPermissionState.allPermissionsGranted) {
+        if (locationPermissionState.allPermissionsGranted) {
+            Log.d("PermissionStatus", "Location permission granted")
             permissionGranted = true
             locationViewModel.fetchLocation(context)
             locationViewModel.fetchCurrentLocation(context)
         } else {
-            locationPermissionState.launchPermissionRequest()
+            Log.d("PermissionStatus", "Requesting location permissions")
+            locationPermissionState.launchMultiplePermissionRequest()
         }
     }
 
@@ -197,22 +210,26 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
 
                 val currentCity by cityViewModel.currentCity.collectAsState()
 
+                LaunchedEffect(Unit) {
+                    cityViewModel.fetchCurrentCityByLatLon(currentLocation!!.latitude, currentLocation!!.longitude)
+                }
+
                 LaunchedEffect(location) {
                     weatherViewModel.fetchWeather(location!!.latitude,location!!.longitude )
                     cityViewModel.fetchCityByLatLon(location!!.latitude,location!!.longitude)
-                    cityViewModel.fetchCurrentCityByLatLon(currentLocation!!.latitude, currentLocation!!.longitude)
                     println("Change location -------------------${location!!.latitude}  ${location!!.longitude}------------------------")
                 }
 
                 LaunchedEffect(currentCity) {
                     if(currentCity!=null){
-                        val savedCityString = sharedPreferences.getString("City-0", null)
+//                        clearSharedPreferences()
+                        val savedCityString = sharedPreferences.getString("City-${currentCity!!.address.city}", null)
                         val stringCity = City(currentCity!!.lat,currentCity!!.lon,currentCity!!.address.city, "")
 
                         println("CurrentCity----------------------${stringCity}")
                         if (savedCityString == null || savedCityString != stringCity.toString()) {
                             val editor = sharedPreferences.edit()
-                            editor.putString("City-0", stringCity.toString())
+                            editor.putString("City-${currentCity!!.address.city}", stringCity.toString())
                             editor.apply()
                         }
                     }
@@ -225,6 +242,7 @@ fun LoadModel(weatherViewModel: WeatherViewModel, locationViewModel: LocationVie
                             locationViewModel.changeLocation(newLat,newLon)
                             setSearchVisible()
                             saveSelectedCity(city, index)
+                                println("cityselected---------------------${city} ---${newLat}---${newLon}")
                     }, setSearchVisible, searchScreenVisible = searchVisible, getSavedCities = { getSavedCities() })
                 } else {
                     LoadingSection()
@@ -298,6 +316,12 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewMod
         val formatterHour = DateTimeFormatter.ofPattern("HH:mm")
         val timeNow = now.format(formatterHour)
         hourlyInfoList.add(Triple(timeNow,weatherCode,tempC))
+
+        tempCG = tempC
+        maxTempCG = maxtemp
+        minTempCG = mintemp
+        weatherDescG = desc
+        weatherCodeG = weatherCode
 
         if (weatherDataList != null) {
             for (weatherData in weatherDataList) {
@@ -415,8 +439,8 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel, cityViewModel: CityViewMod
         }
             AnimatedVisibility(
                 visible = searchScreenVisible,
-                enter = fadeIn(animationSpec = tween(durationMillis = 200)), // Thời gian hiệu ứng fadeIn là 1000ms
-                exit = fadeOut(animationSpec = tween(durationMillis = 200)) // Thời gian hiệu ứng fadeOut là 1000ms
+                enter = fadeIn(animationSpec = tween(durationMillis = 500)), // Thời gian hiệu ứng fadeIn là 1000ms
+                exit = fadeOut(animationSpec = tween(durationMillis = 1000)) // Thời gian hiệu ứng fadeOut là 1000ms
             ) {
                 SearchScreen(
                     onBackPressed = { setSearchVisible() },
@@ -516,39 +540,21 @@ fun SearchScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyColumn(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().weight(1f)
             ) {
-//                val chunkSize = 2 // Số lượng thành phần tối đa trong mỗi hàng
-//                val chunkedCities = filteredCities.chunked(chunkSize)
-//h cái savedCities của t nó chứa list City đó m hiển thị j thì hiển thị đi có lat,lon,name,displayname r đó, click vào text nào là nó lưu lại city đó r
-//                để t khởi tạo giá trị storage ban đầu là Dĩ An nữa đã
-//                items(chunkedCities) { listCitySearch ->
-//                    LazyRow {
-//                        items(listCitySearch) { city ->
-//                            Button(
-//                                onClick = { }, // Xử lý khi thành phố được chọn
-//                                modifier = Modifier
-//                                    .padding(end = 16.dp, bottom = 8.dp),
-//                                colors = ButtonDefaults.buttonColors(backgroundColor = Grey60),
-//                            ) {
-//                                Text(text = city., color = Color.White)
-//                            }
-//                        }
-//                    }
-//                }
-
                 items(listCitySearch?.size ?: 0) { index ->
                     val city = listCitySearch!![index]
 
                     Text(
-                        text = city.display_name,
+                        text = city!!.display_name,
+                        fontSize = 15.sp,
                         modifier = Modifier
-                            .padding(start = 24.dp, bottom = 16.dp, top = 16.dp, end = 16.dp)
+                            .padding(start = 56.dp, bottom = 16.dp, end = 8.dp)
                             .fillMaxWidth()
                             .clickable {
                                 onCitySelected(
-                                    city.lat.toDouble(),
-                                    city.lon.toDouble(),
+                                    city!!.lat.toDouble(),
+                                    city!!.lon.toDouble(),
                                     city,
                                     index
                                 )
@@ -557,32 +563,31 @@ fun SearchScreen(
                 }
             }
 
-//            LazyColumn(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(bottom = 16.dp)
-//            ) {
-//                items(savedCities.size) { index ->
-//                    val city = savedCities[index]
-//                    Box(
-//                        modifier = Modifier.size(300.dp, 200.dp).background(color = Color.Blue)
-//                    ) {
-//                        Text(
-//                            text = city.name,
-//                            modifier = Modifier
-//                                .padding(vertical = 8.dp)
-//                                .clickable {
-//                                    onCitySelected(
-//                                        city.lat.toDouble(),
-//                                        city.lon.toDouble(),
-//                                        city,
-//                                        index
-//                                    )
-//                                }
-//                        )
-//                    }
-//                }
-//            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().weight(4f)
+            ) {
+                items(savedCities.size?: 0) { index ->
+                    val city = savedCities.get(index)
+                    println("City ${index} -----------------------${city.name}")
+                    Button(
+                        modifier = Modifier
+                            .padding(end = 16.dp, bottom = 8.dp),
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Grey60),
+                        onClick = {
+                            onCitySelected(
+                                city!!.lat.toDouble(),
+                                city!!.lon.toDouble(),
+                                city,
+                                index
+                            )
+                        }, // Xử lý khi thành phố được chọn
+                    ) {
+                        Text(text = city!!.name, color = Color.White)
+                    }
+                }
+            }
         }
     }
 }
@@ -632,19 +637,6 @@ fun Header(
                 fontSize = 18.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Cloud Icon",
-                tint = Color.White,
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable {
-
-                    }
             )
         }
     }

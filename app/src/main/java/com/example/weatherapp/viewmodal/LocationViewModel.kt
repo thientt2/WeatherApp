@@ -53,6 +53,12 @@ class LocationViewModel : ViewModel() {
     }
 
     fun changeLocation(lat:Double, lon:Double){
-        _location.value = LocationData(lat,lon)
+        try{
+            _location.value = LocationData(lat,lon)
+        }catch (e : SecurityException){
+            println("Change failed--------------------------------------")
+        }
+
+
     }
 }

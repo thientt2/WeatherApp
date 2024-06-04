@@ -348,7 +348,7 @@ fun NewsDetail(newsItem: NewsItem, onBackClicked: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        "Back",
+                        "Quay lại",
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 30.sp,
@@ -482,6 +482,7 @@ fun NewsDetail(newsItem: NewsItem, onBackClicked: () -> Unit) {
                             }
                         )
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
         }
